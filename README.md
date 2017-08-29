@@ -1,6 +1,6 @@
 # armasky
 
-[Phylodynamic inference](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002947)  of effective population size for time-scaled phylogenies. Inference makes use of Bayesian MCMC and fast maximum a priori. Effective population size is modeled as a stochastic process with autoregressive and moving average components. This method explicitly estimates the growth rate of effective size through time. 
+[Phylodynamic inference](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002947)  of effective population size for time-scaled phylogenies. Inference makes use of Bayesian Gibbs-within-Metropolis MCMC and fast maximum a posteriori algorithms. Effective population size is modeled as a stochastic process with autoregressive and moving average components. This method explicitly estimates the growth rate of effective size through time. 
 
 This package includes functions for
 * incorporating time-varying covariates into phylodynamic inference. This is appropriate if the covariate is expected to alter the growth rate of effective population size
