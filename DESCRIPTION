@@ -1,0 +1,13 @@
+Package: armasky
+Type: Package
+Title: Phylodynamic inference with nonparametric moving average models
+Version: 0.1
+Date: 2017-08-15
+Author: Erik M Volz and Xavier Didelot
+Maintainer: Erik M Volz <erik.volz@gmail.com>
+Description: This package provides methods for inferring effective population size for time-scaled phylogenies using Bayesian MCMC and maximum a priori. The transformed effective population size is modeled as a stochastic process with autoregressive and moving average components. 
+License: MIT
+Imports: Rcpp (>= 0.12.10), RcppArmadillo
+LinkingTo: Rcpp,RcppArmadillo
+Suggests: ggplot2
+RoxygenNote: 6.0.1
