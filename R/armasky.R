@@ -892,9 +892,11 @@ computeR.phylo.bnpma <- function(fit, gamma )
 
 #' Plot effective size through time 
 #'
-#' @param fit A fitted object (eg phylo.mapma)
+#' @param fit A fitted object (eg phylo.mapma or phylo.bnpma)
+#' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
+#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
-
 neplot <- function(x, ...){
 	UseMethod( 'neplot', x )
 }
@@ -902,6 +904,9 @@ neplot <- function(x, ...){
 #' Plot growth rate of effective size through time 
 #'
 #' @param fit A fitted object (eg phylo.mapma)
+#' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
+#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
 growth.plot <- function(x, ... ){
 	UseMethod( 'growth.plot', x )
@@ -910,6 +915,8 @@ growth.plot <- function(x, ... ){
 #' Plot reproduction number through time 
 #'
 #' @param fit A fitted object (eg phylo.mapma)
+#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
 R.plot <- function(x, ... ){
 	UseMethod( 'R.plot', x )
