@@ -7,7 +7,11 @@
 R.plot(x, ...)
 }
 \arguments{
+\item{...}{Additional parameters are passed to ggplot or the base plotting function}
+
 \item{fit}{A fitted object (eg phylo.mapma)}
+
+\item{ggplot=TRUE}{If TRUE, returns a ggplot2 figure}
 }
 \value{
 A ggplot2 plot

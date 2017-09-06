@@ -7,7 +7,13 @@
 growth.plot(x, ...)
 }
 \arguments{
+\item{...}{Additional parameters are passed to ggplot or the base plotting function}
+
 \item{fit}{A fitted object (eg phylo.mapma)}
+
+\item{logy=TRUE}{If TRUE, the plot is returned with logarithmic y-axis}
+
+\item{ggplot=TRUE}{If TRUE, returns a ggplot2 figure}
 }
 \value{
 A ggplot2 plot
