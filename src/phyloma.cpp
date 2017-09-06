@@ -60,6 +60,7 @@ double rbm_loglik2_2( vec ne, double tau, double dh, vec diff_zxb  ){
 	return ll;
 }
 
+// TODO speed optimisations; do not recompute likelihood for all increments when only one component changes
 
 
 ////////////////////////////////////////////////////////////////////////

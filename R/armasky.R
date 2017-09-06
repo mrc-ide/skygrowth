@@ -861,20 +861,19 @@ with( control, {
 #' @param gamma Per-capita death or recovery rate; equivalent to 1/generation time
 #' @return Fitted object with $R attribute
 computeR <- function(x, ...){
-	UseMethod('computeR', x, ...)
+	UseMethod('computeR', x )
 }
 
 computeR.phylo.mapma <- function(fit, gamma )
 {
 	stopifnot(inherits(fit, "phylo.mapma"))
-	D <- 1/GAMMA
+	D <- 1/gamma
 	# r = (R0 - 1) / D
 	dh <- abs(diff(fit$tim)[1])
 	fit$gamma = gamma 
 	fit$R <- (fit$growth/dh) * D + 1
 	fit
 }
-
 
 computeR.phylo.bnpma <- function(fit, gamma )
 {
@@ -894,8 +893,9 @@ computeR.phylo.bnpma <- function(fit, gamma )
 #'
 #' @param fit A fitted object (eg phylo.mapma)
 #' @return A ggplot2 plot
-ne.plot <- function(x, ...){
-	UseMethod( 'ne.plot', x , ...)
+
+neplot <- function(x, ...){
+	UseMethod( 'neplot', x )
 }
 
 #' Plot growth rate of effective size through time 
@@ -903,7 +903,7 @@ ne.plot <- function(x, ...){
 #' @param fit A fitted object (eg phylo.mapma)
 #' @return A ggplot2 plot
 growth.plot <- function(x, ... ){
-	UseMethod( 'growth.plot', x , ...)
+	UseMethod( 'growth.plot', x )
 }
 
 #' Plot reproduction number through time 
@@ -911,79 +911,159 @@ growth.plot <- function(x, ... ){
 #' @param fit A fitted object (eg phylo.mapma)
 #' @return A ggplot2 plot
 R.plot <- function(x, ... ){
-	UseMethod( 'R.plot', x, ... )
+	UseMethod( 'R.plot', x )
 }
 
-ne.plot.phylo.mapma <- function( fit )
+neplot.phylo.mapma <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 {
 	stopifnot(inherits(fit, "phylo.mapma"))
-	require(ggplot2)
 	ne <- fit$ne
-	pldf <- data.frame( t = fit$time,  nemed = fit$ne, nelb = fit$ne_ci[,1], neub = fit$ne_ci[,3] )
-	pl <- ggplot( pldf, aes( x = t, y = nemed) ) + geom_line()+ ylab('Effective population size') + xlab('Time before most recent sample')
-	pl <- pl + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2)
-	pl
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		pldf <- data.frame( t = fit$time,  nemed = ne, nelb = fit$ne_ci[,1], neub = fit$ne_ci[,3] )
+		pl <- ggplot( pldf, aes( x = t, y = nemed) , ...) + geom_line()+ ylab('Effective population size') + xlab('Time before most recent sample')
+		pl <- pl + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2)
+		if (logy) pl <- pl + scale_y_log10() 
+		return(pl)
+	} else{
+		if (logy)
+			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', log='y', ...)
+		else
+			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', ...)
+		lines( fit$time, fit$ne_c[,1] , lty=3)
+		lines( fit$time, fit$ne_c[,3] , lty=3)
+		xlab('Time')
+		ylab('Effective population size') 
+		invisible(fit)
+	}
 }
 
-growth.plot.phylo.mapma <- function( fit )
+growth.plot.phylo.mapma <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 {
 	stopifnot(inherits(fit, "phylo.mapma"))
-	require(ggplot2)
-	pldf <- data.frame( t = fit$time, gr = fit$growth)
-	ggplot( pldf, aes( x = t, y = gr) ) + geom_line() + ylab('Growth rate') + xlab('Time before most recent sample')
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		pldf <- data.frame( t = fit$time, gr = fit$growth)
+		pl <- ggplot( pldf, aes( x = t, y = gr), ... ) + geom_line() + ylab('Growth rate') + xlab('Time before most recent sample')
+		if (logy) pl <- pl + scale_y_log10() 
+		return(pl)
+	} else{
+		if (logy)
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', ...)
+		else
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', ...)
+		xlab('Time')
+		ylab('Growth rate ') 
+		invisible(fit)
+	}
 }
 
-R.plot.phylo.mapma <- function(fit, gamma = NA )
+R.plot.phylo.mapma <- function(fit, gamma = NA , ggplot=TRUE, ...)
 {
 	stopifnot(inherits(fit, "phylo.mapma"))
-	require(ggplot2)
-	if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
-	if (is.na(gamma)) gamma <- fit$gamma
-	i <- 1:(length(fit$time)-1)
-	fit <- computeR.phylo.mapma( fit, gamma )
-	pldf <- data.frame( t = fit$time[i],R = fit$R)
-	ggplot( pldf, aes( x = t, y = R) ) + geom_line() +  ylab('Reproduction number') + xlab('Time before most recent sample')
-
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
+		if (is.na(gamma)) gamma <- fit$gamma
+		i <- 1:(length(fit$time)-1)
+		fit <- computeR.phylo.mapma( fit, gamma )
+		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
+		ggplot( pldf, aes( x = t, y = R) , ...) + geom_line() + ylab('Reproduction number') + xlab('Time before most recent sample')
+	} else{
+		if (logy)
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', ...)
+		else
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', ...)
+		xlab('Time')
+		ylab('Growth rate ') 
+		invisible(fit)	
+	}
 }
 
-
-plot.phylo.mapma <- function( x, ... ){
-	ne.plot( x, ...) 
+plot.phylo.mapma <- function( x,  ... ){
+	neplot( x, ...) 
 }
 
-
-ne.plot.phylo.bnpma <- function( fit )
+neplot.phylo.bnpma <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 {
 	stopifnot(inherits(fit, "phylo.bnpma"))
-	require(ggplot2)
 	ne <- fit$ne_ci
-	pldf <- data.frame( t = fit$time, nelb = ne[,1], nemed = ne[,2], neub = ne[,3] )
-	ggplot( pldf, aes( x = t, y = nemed) ) + geom_line() + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2) + ylab('Effective population size') + xlab('Time before most recent sample')
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		
+		pldf <- data.frame( t = fit$time, nelb = ne[,1], nemed = ne[,2], neub = ne[,3] )
+		pl <- ggplot( pldf, aes( x = t, y = nemed), ... ) + geom_line() + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2) + ylab('Effective population size') + xlab('Time before most recent sample')
+		if (logy) pl <- pl + scale_y_log10()
+		return(pl)
+	} else{
+		if (logy)
+			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', log='y', ...)
+		else
+			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', ...)
+		lines( fit$time, ne[,1] , lty=3)
+		lines( fit$time, ne[,3] , lty=3)
+		xlab('Time')
+		ylab('Effective population size') 
+		invisible(fit)
+	}
 }
 
-growth.plot.phylo.bnpma <- function( fit )
+growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = TRUE , ...)
 {
 	stopifnot(inherits(fit, "phylo.bnpma"))
-	require(ggplot2)
 	x <- fit$growthrate_ci
-	pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-	ggplot( pldf, aes( x = t, y = med) ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Growth rate') + xlab('Time before most recent sample')
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
+		pl <- ggplot( pldf, aes( x = t, y = med), ... ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Growth rate') + xlab('Time before most recent sample')
+		if (logy) pl <- pl + scale_y_log10()
+		return(pl) 
+	} else{
+		if (logy)
+			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', log='y', ...)
+		else
+			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', ...)
+		#
+		lines( fit$time, x[,1] , lty=3)
+		lines( fit$time, x[,3] , lty=3)
+		xlab('Time')
+		ylab('Growth rate ') 	
+		invisible(fit)
+	}
 }
 
-R.plot.phylo.bnpma <- function(fit, gamma = NA )
+R.plot.phylo.bnpma <- function(fit, gamma = NA, ggplot=TRUE )
 {
 	stopifnot(inherits(fit, "phylo.bnpma"))
-	require(ggplot2)
-	if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
-	if (is.na(gamma)) gamma <- fit$gamma
 	fit <- computeR.phylo.bnpma( fit, gamma )
 	x <- fit$R_ci
-	pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-	ggplot( pldf, aes( x = t, y = med) ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Reproduction number') + xlab('Time before most recent sample')
+	if ( 'ggplot2' %in% installed.packages()  & ggplot)
+	{
+		require(ggplot2)
+		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
+		if (is.na(gamma)) gamma <- fit$gamma
+		
+		
+		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
+		ggplot( pldf, aes( x = t, y = med) ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Reproduction number') + xlab('Time before most recent sample')
+	} else{
+		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', ...)
+		
+		lines( fit$time, x[,1] , lty=3)
+		lines( fit$time, x[,3] , lty=3)
+		xlab('Time')
+		ylab('Reproduction number') 
+		invisible(fit)
+	}
 }
 
 plot.phylo.bnpma <- function( x, ... ){
-	ne.plot( x, ...) 
+	neplot( x, ...) 
 }
 
 
