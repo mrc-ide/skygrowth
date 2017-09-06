@@ -131,7 +131,7 @@ phylo.mapma <- function(tre
 		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
-		
+	
 	.of2.2 <- function( logtau, xne =ne)
 	{
 		.of1.2( log( xne ) , xtau = exp( logtau ) )
@@ -321,7 +321,7 @@ phylo.mapma.covar =phylo.mapma.covars <- function(tre
 		zxb <- beta2zxb ( xbeta )
 		.of3.1(logne = logne , zxb = zxb, xbeta = xbeta, xtau = xtau )
 	}
-	
+
 	##
 	beta2zxb <- function( beta ){
 		if ( length( betanames ) > 1 ){
@@ -476,8 +476,6 @@ with( control, {
 	
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
-	if (is.null( prop_log_tau_sd )) prop_log_tau_sd <- .2 + abs( log(tau0) ) / 5
-	
 	mapfit <- phylo.mapma(tre
 	  , tau0 = tau0
 	  , tau_logprior = tau_logprior
@@ -487,6 +485,7 @@ with( control, {
 	  , abstol = 1e-4
 	  , control = NULL
 	)
+	if (is.null( prop_log_tau_sd )) prop_log_tau_sd <- .2 + abs( log(mapfit$tau) ) / 5
 	#ne <- tredat$ne0
 	ne <- ( mapfit$ne )
 	tau0 <- mapfit$tau 
@@ -511,7 +510,8 @@ with( control, {
 		ll <-  sum(  lterms[,1] + log( 1/ne ) * rev( tredat$nco ) )
 		ll <- ll - sum( lterms[,2] / ne )
 		
-		grs <- diff ( fwdlogne ) / ( fwdlogne[-res] ) / dh #
+		#grs <- diff ( fwdlogne ) / ( fwdlogne[-res] ) / dh #
+		grs <- diff ( ne ) / ( ne[-res] ) / dh #
 		ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
 		ll
 	}
@@ -663,6 +663,7 @@ phylo.bnpma.covar = phylo.bnpma.covars <- function(tre
 	#ne <- tredat$ne0
 	ne = ne0 <- ( mapfit$ne )
 	gr0 <- mapfit$growthrate
+	tau0 <- mapfit$tau
 	
 	tredat <- mapfit$tredat
 	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
@@ -928,13 +929,11 @@ neplot.phylo.mapma <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 		return(pl)
 	} else{
 		if (logy)
-			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', log='y', ...)
+			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Effective population size', ...)
 		else
-			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', ...)
+			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', xlab='Time', ylab='Effective population size', ...)
 		lines( fit$time, fit$ne_c[,1] , lty=3)
 		lines( fit$time, fit$ne_c[,3] , lty=3)
-		xlab('Time')
-		ylab('Effective population size') 
 		invisible(fit)
 	}
 }
@@ -951,11 +950,10 @@ growth.plot.phylo.mapma <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 		return(pl)
 	} else{
 		if (logy)
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', ...)
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Growth rate',...)
 		else
 			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', ...)
-		xlab('Time')
-		ylab('Growth rate ') 
+		
 		invisible(fit)
 	}
 }
@@ -974,11 +972,10 @@ R.plot.phylo.mapma <- function(fit, gamma = NA , ggplot=TRUE, ...)
 		ggplot( pldf, aes( x = t, y = R) , ...) + geom_line() + ylab('Reproduction number') + xlab('Time before most recent sample')
 	} else{
 		if (logy)
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', ...)
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Reproduction number', ...)
 		else
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', ...)
-		xlab('Time')
-		ylab('Growth rate ') 
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
+		
 		invisible(fit)	
 	}
 }
@@ -1001,18 +998,16 @@ neplot.phylo.bnpma <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 		return(pl)
 	} else{
 		if (logy)
-			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', log='y', ...)
+			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Effective population size', ...)
 		else
-			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', ...)
+			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Effective population size', ...)
 		lines( fit$time, ne[,1] , lty=3)
 		lines( fit$time, ne[,3] , lty=3)
-		xlab('Time')
-		ylab('Effective population size') 
 		invisible(fit)
 	}
 }
 
-growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = TRUE , ...)
+growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 {
 	stopifnot(inherits(fit, "phylo.bnpma"))
 	x <- fit$growthrate_ci
@@ -1025,14 +1020,12 @@ growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = TRUE , ...)
 		return(pl) 
 	} else{
 		if (logy)
-			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', log='y', ...)
+			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Growth rate', ...)
 		else
-			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', ...)
+			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Growth rate', ...)
 		#
 		lines( fit$time, x[,1] , lty=3)
 		lines( fit$time, x[,3] , lty=3)
-		xlab('Time')
-		ylab('Growth rate ') 	
 		invisible(fit)
 	}
 }
@@ -1052,12 +1045,10 @@ R.plot.phylo.bnpma <- function(fit, gamma = NA, ggplot=TRUE )
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
 		ggplot( pldf, aes( x = t, y = med) ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Reproduction number') + xlab('Time before most recent sample')
 	} else{
-		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', ...)
+		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
 		
 		lines( fit$time, x[,1] , lty=3)
 		lines( fit$time, x[,3] , lty=3)
-		xlab('Time')
-		ylab('Reproduction number') 
 		invisible(fit)
 	}
 }
