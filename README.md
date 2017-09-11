@@ -68,4 +68,4 @@ And we can visualise the growth rate through time:
 growth.plot( mcmcfit )
 ```
 
-![](figure/nyflu_growth.png)
+![](figure/nyflu_growth2.png)
