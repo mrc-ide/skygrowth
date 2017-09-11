@@ -61,7 +61,7 @@ mcmcfit <- phylo.bnpma( tr, res = 24*13, tau0=.1 )
 plot( mcmcfit )  + scale_y_log10(limits=c(.01, 1e5))
 ```
 
-![](figure/nyflu_mcmcfit.png)
+![](figure/nyflu_mcmcfit2.png)
 
 And we can visualise the growth rate through time:
 ```r
