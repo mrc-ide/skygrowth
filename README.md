@@ -54,3 +54,18 @@ plot_BNPR( b0 )
 ```
 
 ![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png)
+
+We can also run the slower MCMC version which should provide more accurate CIs:
+```r
+mcmcfit <- phylo.bnpma( tr, res = 24*13, tau0=.1 )
+plot( mcmcfit )  + scale_y_log10(limits=c(.01, 1e5))
+```
+
+![](figure/nyflu_mcmcfit.png)
+
+And we can visualise the growth rate through time:
+```r
+growth.plot( mcmcfit )
+```
+
+![](figure/nyflu_growth.png)
