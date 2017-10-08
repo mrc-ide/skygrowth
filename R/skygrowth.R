@@ -89,7 +89,7 @@ require(ape)
 #' @param control List of options passed to optim
 #' @return A fitted model including effective size through time
 #' @examples
-#' #require(armasky)
+#' #require(skygrowth)
 #' #require(ape)
 #' #load('NY_flu.rda') 
 #' #(tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all

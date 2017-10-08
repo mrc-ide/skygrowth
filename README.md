@@ -1,6 +1,6 @@
-# armasky
+# skygrowth
 
-[Phylodynamic inference](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002947)  of effective population size for time-scaled phylogenies. Inference makes use of Bayesian Gibbs-within-Metropolis MCMC and fast maximum a posteriori algorithms. Effective population size is modeled as a stochastic process with autoregressive and moving average components. This method explicitly estimates the growth rate of effective size through time. 
+[Phylodynamic inference](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002947)  of effective population size for time-scaled phylogenies. Inference makes use of Bayesian Gibbs-within-Metropolis MCMC and fast maximum a posteriori algorithms. The growth rate of effective population size is modeled as a simple Brownian motion process. 
 
 This package includes functions for
 * incorporating time-varying covariates into phylodynamic inference. This is appropriate if the covariate is expected to alter the growth rate of effective population size
@@ -14,9 +14,9 @@ This data set is provided in the phylodyn R package by Karcher et al.
 It is based on 12 consecutive seasonal influenza seasons in NY state up to 2004. 
 
 ```r
-require(armasky)
+require(skygrowth)
 require(ape)
-load('NY_flu.rda') 
+load(system.file( 'NY_flu.rda', package='skygrowth')  )
 (tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
 ```
 

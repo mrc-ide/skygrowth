@@ -1,12 +1,12 @@
-\name{armasky-package}
-\alias{armasky-package}
-\alias{armasky}
+\name{skygrowth-package}
+\alias{skygrowth-package}
+\alias{skygrowth}
 \docType{package}
 \title{
-  Phylodynamic inference with nonparametric moving average models
+  Phylodynamic inference with nonparametric growth rate models
 }
 \description{
-  This package provides methods for inferring effective population size for time-scaled phylogenies using Bayesian MCMC and maximum a priori. The transformed effective population size is modeled as a stochastic process with autoregressive and moving average components. 
+  This package provides methods for inferring effective population size for time-scaled phylogenies using Bayesian MCMC and maximum a posteriori. 
 }
 \details{
   phylo.mapma and phylo.bnpma provide maximum and a posteriori methods respectively for inferring effective population size through time given a dated genealogy. 
@@ -24,8 +24,9 @@ Maintainer: Erik M Volz <erik.volz@gmail.com>
 % from the file KEYWORDS in the R documentation.
 \keyword{ package }
 \seealso{
-  https://github.com/mrc-ide/armasky
+  https://github.com/mrc-ide/skygrowth
 }
 \examples{
   
 }
+
