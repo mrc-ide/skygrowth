@@ -31,7 +31,7 @@ load(system.file( 'NY_flu.rda', package='skygrowth')  )
 ```
 
 ```r
-fit <- phylo.mapma( tr 
+fit <- skygrowth.map( tr 
  , res = 24*13  # Ne changes every 2 weeks
  , tau0 = .1    # Smoothing parameter. If prior is not specified, this will also set the scale of the prior
 )
@@ -57,7 +57,7 @@ plot_BNPR( b0 )
 
 We can also run the slower MCMC version which should provide more accurate CIs:
 ```r
-mcmcfit <- phylo.bnpma( tr, res = 24*13, tau0=.1 )
+mcmcfit <- skygrowth.mcmc( tr, res = 24*13, tau0=.1 )
 plot( mcmcfit )  + scale_y_log10(limits=c(.01, 1e5))
 ```
 

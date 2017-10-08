@@ -77,7 +77,7 @@ require(ape)
 	tau_logprior 
 }
 
-#' Maximum a posteriori estimate of effective size through time with a 1st order moving average model
+#' Maximum a posteriori estimate of effective size through time with a non-parametric growth model
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
 #' @param tau0 Initial guess of the precision parameter
@@ -93,12 +93,12 @@ require(ape)
 #' #require(ape)
 #' #load('NY_flu.rda') 
 #' #(tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
-#' #fit <- phylo.mapma( tr 
+#' #fit <- skygrowth.map( tr 
 #' # , res = 24*13  # Ne changes every 2 weeks
 #' # , tau0 = .1    # Smoothing parameter. If prior is not specified, this will also set the scale of the prior
 #' #)
 #' #plot( fit ) + scale_y_log10()
-phylo.mapma <- function(tre
+skygrowth.map <- function(tre
   , tau0 = 10
   , tau_logprior = 'exponential'
   , res = 50 
@@ -205,11 +205,11 @@ phylo.mapma <- function(tre
 	  , sigma = (fsigma )
 	)
 	
-	class(rv) <- 'phylo.mapma'
+	class(rv) <- 'skygrowth.map'
 	rv
 }
 
-#' Maximum a posteriori estimate of effective size through time with a 1st order moving average model and using covariate data
+#' Maximum a posteriori estimate of effective size through time using covariate data
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
 #' @param formula An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
@@ -225,7 +225,7 @@ phylo.mapma <- function(tre
 #' @param control List of options passed to optim
 #' @return A fitted model including effective size through time
 #' @examples
-phylo.mapma.covar =phylo.mapma.covars <- function(tre
+skygrowth.map.covar =skygrowth.map.covars <- function(tre
   , formula # should not have left hand side 
   , data # data.frame must include 'time' 
   , maxSampleTime # required to relate to covars 
@@ -245,7 +245,7 @@ phylo.mapma.covar =phylo.mapma.covars <- function(tre
 	dh <- abs(diff(tredat$heights)[1] )
 	
 	# fit w/o covars first 
-	mapfit <- phylo.mapma(tre
+	mapfit <- skygrowth.map(tre
 	  , tau0 = tau0
 	  , tau_logprior = tau_logprior
 	  , res = res
@@ -422,7 +422,7 @@ phylo.mapma.covar =phylo.mapma.covars <- function(tre
 	  , beta = beta 
 	)
 	
-	class(rv) <- c('phylo.mapma.covar', 'phylo.mapma' )
+	class(rv) <- c('skygrowth.map.covar', 'skygrowth.map' )
 	rv
 }
 
@@ -441,7 +441,7 @@ phylo.mapma.covar =phylo.mapma.covars <- function(tre
 
 ##
 
-#' A gibbs-metropolis algorithm for sampling Ne(t) with a 1st order moving average model
+#' A gibbs-metropolis algorithm for sampling Ne(t) with a non-parametric growth model
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
 #' @param mhsteps Number of mcmc steps
@@ -453,7 +453,7 @@ phylo.mapma.covar =phylo.mapma.covars <- function(tre
 #' @param control List of options passed to optim
 #' @return A fitted model including effective size through time
 #' @examples
-phylo.bnpma <- function(tre
+skygrowth.mcmc <- function(tre
   , mhsteps = 1e5
   , tau0 = 10
   , tau_logprior = 'exponential'
@@ -476,7 +476,7 @@ with( control, {
 	
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
-	mapfit <- phylo.mapma(tre
+	mapfit <- skygrowth.map(tre
 	  , tau0 = tau0
 	  , tau_logprior = tau_logprior
 	  , res = res
@@ -580,23 +580,23 @@ with( control, {
 	  , mapfit = mapfit 
 	)
 	
-	class(rv) <- 'phylo.bnpma'
+	class(rv) <- 'skygrowth.mcmc'
 	rv
 })}
 
 
 #' Continue MCMC chain of previously fitted model
 #'
-#' @param fit A phylo.bnpma fit
+#' @param fit A skygrowth.mcmc fit
 #' @param mhsteps Additional MCMC steps to compute
 #' @param quiet Verbose output? 
-#' @return A phylo.bnpma fit 
-continue.phylo.bnpma <- function( fit 
+#' @return A skygrowth.mcmc fit 
+continue.skygrowth.mcmc <- function( fit 
  , mhsteps
  , quiet = F
  , ...){
-	stopifnot(inherits(fit, "phylo.bnpma"))
-	phylo.bnpma( fit$tre
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
+	skygrowth.mcmc( fit$tre
 	  , mhsteps = mhsteps
 	  , tau0 = tail(fit$tau,1)
 	  , tau_logprior = fit$tau_logprior 
@@ -629,7 +629,7 @@ continue.phylo.bnpma <- function( fit
 #' @param control List of options passed to optim
 #' @return A fitted model including effective size through time
 #' @examples
-phylo.bnpma.covar = phylo.bnpma.covars <- function(tre
+skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
   , formula # should not have left hand side 
   , data # data.frame must include 'time' 
   , maxSampleTime # required to relate to covars 
@@ -647,7 +647,7 @@ phylo.bnpma.covar = phylo.bnpma.covars <- function(tre
 	if (!('time' %in% colnames(data))) stop('covariate data must include *time* of observation' )
 	# initial fit for guess of ne growth 
 
-	phylo.mapma.covar ( tre, 
+	skygrowth.map.covar ( tre, 
 	 , formula = formula
 	 , data = data
 	 , maxSampleTime = maxSampleTime
@@ -845,7 +845,7 @@ with( control, {
 	  , logpo = LOGPO
 	)
 	
-	class(rv) <- c('phylo.bnpma.covar', 'phylo.bnpma')
+	class(rv) <- c('skygrowth.mcmc.covar', 'skygrowth.mcmc')
 	rv
 })}
 
@@ -865,9 +865,9 @@ computeR <- function(x, ...){
 	UseMethod('computeR', x )
 }
 
-computeR.phylo.mapma <- function(fit, gamma )
+computeR.skygrowth.map <- function(fit, gamma )
 {
-	stopifnot(inherits(fit, "phylo.mapma"))
+	stopifnot(inherits(fit, "skygrowth.map"))
 	D <- 1/gamma
 	# r = (R0 - 1) / D
 	dh <- abs(diff(fit$tim)[1])
@@ -876,9 +876,9 @@ computeR.phylo.mapma <- function(fit, gamma )
 	fit
 }
 
-computeR.phylo.bnpma <- function(fit, gamma )
+computeR.skygrowth.mcmc <- function(fit, gamma )
 {
-	stopifnot(inherits(fit, "phylo.bnpma"))
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
 	D <- 1/gamma
 	# r = (R0 - 1) / D
 	dh <- abs(diff(fit$tim)[1])
@@ -892,7 +892,7 @@ computeR.phylo.bnpma <- function(fit, gamma )
 
 #' Plot effective size through time 
 #'
-#' @param fit A fitted object (eg phylo.mapma or phylo.bnpma)
+#' @param fit A fitted object (eg skygrowth.map or skygrowth.mcmc)
 #' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
 #' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
@@ -903,7 +903,7 @@ neplot <- function(x, ...){
 
 #' Plot growth rate of effective size through time 
 #'
-#' @param fit A fitted object (eg phylo.mapma)
+#' @param fit A fitted object (eg skygrowth.map)
 #' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
 #' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
@@ -914,7 +914,7 @@ growth.plot <- function(x, ... ){
 
 #' Plot reproduction number through time 
 #'
-#' @param fit A fitted object (eg phylo.mapma)
+#' @param fit A fitted object (eg skygrowth.map)
 #' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
@@ -922,9 +922,9 @@ R.plot <- function(x, ... ){
 	UseMethod( 'R.plot', x )
 }
 
-neplot.phylo.mapma <- function( fit, ggplot=TRUE, logy=TRUE, ... )
+neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 {
-	stopifnot(inherits(fit, "phylo.mapma"))
+	stopifnot(inherits(fit, "skygrowth.map"))
 	ne <- fit$ne
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
@@ -945,9 +945,9 @@ neplot.phylo.mapma <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 	}
 }
 
-growth.plot.phylo.mapma <- function( fit , ggplot=TRUE, logy=FALSE, ...)
+growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 {
-	stopifnot(inherits(fit, "phylo.mapma"))
+	stopifnot(inherits(fit, "skygrowth.map"))
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		require(ggplot2)
@@ -965,16 +965,16 @@ growth.plot.phylo.mapma <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 	}
 }
 
-R.plot.phylo.mapma <- function(fit, gamma = NA , ggplot=TRUE, ...)
+R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 {
-	stopifnot(inherits(fit, "phylo.mapma"))
+	stopifnot(inherits(fit, "skygrowth.map"))
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		require(ggplot2)
 		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
 		if (is.na(gamma)) gamma <- fit$gamma
 		i <- 1:(length(fit$time)-1)
-		fit <- computeR.phylo.mapma( fit, gamma )
+		fit <- computeR.skygrowth.map( fit, gamma )
 		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
 		ggplot( pldf, aes( x = t, y = R) , ...) + geom_line() + ylab('Reproduction number') + xlab('Time before most recent sample')
 	} else{
@@ -987,13 +987,13 @@ R.plot.phylo.mapma <- function(fit, gamma = NA , ggplot=TRUE, ...)
 	}
 }
 
-plot.phylo.mapma <- function( x,  ... ){
+plot.skygrowth.map <- function( x,  ... ){
 	neplot( x, ...) 
 }
 
-neplot.phylo.bnpma <- function( fit, ggplot=TRUE, logy = TRUE , ... )
+neplot.skygrowth.mcmc <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 {
-	stopifnot(inherits(fit, "phylo.bnpma"))
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
 	ne <- fit$ne_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
@@ -1014,9 +1014,9 @@ neplot.phylo.bnpma <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 	}
 }
 
-growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
+growth.plot.skygrowth.mcmc <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 {
-	stopifnot(inherits(fit, "phylo.bnpma"))
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
 	x <- fit$growthrate_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
@@ -1037,10 +1037,10 @@ growth.plot.phylo.bnpma <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 	}
 }
 
-R.plot.phylo.bnpma <- function(fit, gamma = NA, ggplot=TRUE )
+R.plot.skygrowth.mcmc <- function(fit, gamma = NA, ggplot=TRUE )
 {
-	stopifnot(inherits(fit, "phylo.bnpma"))
-	fit <- computeR.phylo.bnpma( fit, gamma )
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
+	fit <- computeR.skygrowth.mcmc( fit, gamma )
 	x <- fit$R_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
@@ -1060,16 +1060,16 @@ R.plot.phylo.bnpma <- function(fit, gamma = NA, ggplot=TRUE )
 	}
 }
 
-plot.phylo.bnpma <- function( x, ... ){
+plot.skygrowth.mcmc <- function( x, ... ){
 	neplot( x, ...) 
 }
 
 
 ## print and summary methods
 
-print.phylo.bnpma <- function(fit, ...)
+print.skygrowth.mcmc <- function(fit, ...)
 {
-	stopifnot(inherits(fit, "phylo.bnpma"))
+	stopifnot(inherits(fit, "skygrowth.mcmc"))
 	cat( 'Bayesian non parametric moving average phylodynamic model\n')
 	cat(paste( 'Effective population size bins:', ncol(fit$ne), '\n'))
 	cat(paste( 'Iterations:', ncol(fit$ne), '\n'))
@@ -1078,12 +1078,12 @@ print.phylo.bnpma <- function(fit, ...)
 	print( rbind( fit$times[ i] , fit$ne[ncol(fit$ne), i] ) )
 	invisible( fit )
 }
-summary.phylo.bnpma <- function(fit, ...){
-	print.phylo.bnpma( fit )
+summary.skygrowth.mcmc <- function(fit, ...){
+	print.skygrowth.mcmc( fit )
 }
-print.phylo.mapma <- function(fit, ...)
+print.skygrowth.map <- function(fit, ...)
 {
-	stopifnot(inherits(fit, "phylo.mapma"))
+	stopifnot(inherits(fit, "skygrowth.map"))
 	cat( 'Maximum a posteriori non parametric moving average phylodynamic model\n')
 	cat(paste( 'Effective population size bins:', length(fit$ne), '\n'))
 	cat('Effective population size at last iteration:\n')
@@ -1093,7 +1093,7 @@ print.phylo.mapma <- function(fit, ...)
 	print( fit$tau )
 	invisible( fit )
 }
-summary.phylo.mapma <- function(fit, ...){
+summary.skygrowth.map <- function(fit, ...){
 	print( fit )
 }
 
