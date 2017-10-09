@@ -35,10 +35,10 @@ using namespace std;
 	//~ return ll; 
 //~ }
 
-double rbm_loglik1_2( vec ne, double tau,  double dh ) {
-	vec diffne = arma::diff ( ne )  ;
-	vec grs = (diffne / ne.head( diffne.size() ) )/dh; 
-	vec diffgrs = arma::diff( grs ); 
+double rbm_loglik1_2( arma::vec ne, double tau,  double dh ) {
+	arma::vec diffne = arma::diff ( ne )  ;
+	arma::vec grs = (diffne / ne.head( diffne.size() ) )/dh; 
+	arma::vec diffgrs = arma::diff( grs ); 
 	double xsd = sqrt( dh / tau ); 
 	double ll = 0.; 
 	for (int i = 0; i < diffgrs.size(); i++){
@@ -48,10 +48,10 @@ double rbm_loglik1_2( vec ne, double tau,  double dh ) {
 }
 
 // includes covars 
-double rbm_loglik2_2( vec ne, double tau, double dh, vec diff_zxb  ){
-	vec diffne = arma::diff ( ne )  ;
-	vec grs = (diffne / ne.head( diffne.size() ) ) / dh ; //
-	vec diffgrs = arma::diff( grs ) ; 
+double rbm_loglik2_2( arma::vec ne, double tau, double dh, arma::vec diff_zxb  ){
+	arma::vec diffne = arma::diff ( ne )  ;
+	arma::vec grs = (diffne / ne.head( diffne.size() ) ) / dh ; //
+	arma::vec diffgrs = arma::diff( grs ) ; 
 	double xsd = sqrt( dh / tau ); 
 	double ll = 0.; 
 	for (int i = 0; i < diffgrs.size(); i++){
@@ -65,8 +65,8 @@ double rbm_loglik2_2( vec ne, double tau, double dh, vec diff_zxb  ){
 
 ////////////////////////////////////////////////////////////////////////
 // true co likelihood based on intervals
-double co_loglik2( vec ne, vec nco ,double dh, mat lterms  ){
-	vec lls( ne.size(), fill::zeros);
+double co_loglik2( arma::vec ne, arma::vec nco ,double dh, arma::mat lterms  ){
+	arma::vec lls( ne.size(), fill::zeros);
 	for (int i = 0; i< ne.size(); i++){
 		lls(i) = lterms(i,0);
 		lls(i) +=  log( 1./ne(i) ) * nco(i) ; 
@@ -77,11 +77,11 @@ double co_loglik2( vec ne, vec nco ,double dh, mat lterms  ){
 
 //~ mh_sample_ne1_2( ( ne) , rev( tredat$nco ),  tau, mapfit$sigma, dh, lterms) 
 //[[Rcpp::export()]]
-vec mh_sample_ne1_2( vec fwdnevec, vec fwdnco , double tau , vec prop_sigma, double dh, mat lterms){
-	vec logne = log ( fwdnevec ) ;
+arma::vec mh_sample_ne1_2( arma::vec fwdnevec, arma::vec fwdnco , double tau , arma::vec prop_sigma, double dh, arma::mat lterms){
+	arma::vec logne = log ( fwdnevec ) ;
 	double ll = rbm_loglik1_2( fwdnevec, tau, dh ) + co_loglik2( fwdnevec, fwdnco, dh, lterms ) ;
 	double propll;
-	vec proplogne = log( fwdnevec ); 
+	arma::vec proplogne = log( fwdnevec ); 
 	for (int i = 0; i < logne.size() ; i++){
 		//~ proplogne = logne; 
 		proplogne(i) =  Rf_rnorm(  logne(i), prop_sigma(i) ) ; 
@@ -99,9 +99,9 @@ vec mh_sample_ne1_2( vec fwdnevec, vec fwdnco , double tau , vec prop_sigma, dou
 
 // uses covars: 
 //[[Rcpp::export()]]
-vec mh_sample_ne2_2( vec fwdnevec, vec fwdnco , double tau , vec prop_sigma, double dh, vec zxb, mat lterms ){
+arma::vec mh_sample_ne2_2( arma::vec fwdnevec, arma::vec fwdnco , double tau , arma::vec prop_sigma, double dh, arma::vec zxb, arma::mat lterms ){
 	// mean diference predicted by covariates: 	
-	vec dzxb = arma::diff( zxb ); 
+	arma::vec dzxb = arma::diff( zxb ); 
 	for (int i = 0; i < dzxb.size(); i++){
 		if ( NumericVector::is_na(dzxb(i))){
 			dzxb(i) = 0.; 
@@ -109,10 +109,10 @@ vec mh_sample_ne2_2( vec fwdnevec, vec fwdnco , double tau , vec prop_sigma, dou
 	}
 	
 	
-	vec logne = log ( fwdnevec ) ;
+	arma::vec logne = log ( fwdnevec ) ;
 	double ll = rbm_loglik2_2( fwdnevec, tau, dh, dzxb ) + co_loglik2( fwdnevec, fwdnco, dh, lterms ) ;
 	double propll;
-	vec proplogne = log( fwdnevec ); 
+	arma::vec proplogne = log( fwdnevec ); 
 	for (int i = 0 ; i < logne.size() ; i++){
 		//~ proplogne = logne; 
 		proplogne(i) =  Rf_rnorm(  logne(i), prop_sigma(i)  ) ; 
