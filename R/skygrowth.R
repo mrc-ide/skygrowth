@@ -1,10 +1,3 @@
-#' @importFrom Rcpp evalCpp
-#' @useDynLib skygrowth
-#' @import stats
-#' @import ape
-#' @importFrom graphics plot lines
-#' @importFrom utils installed.packages tail
-
 # derive timeseries of coalescent and ltt along appropriate time axis 
 .tre2df <- function( tre, xres){
 	res <- xres + 1
