@@ -23,21 +23,12 @@ skygrowth.map(tre, tau0 = 10, tau_logprior = "exponential", res = 50,
 \item{abstol}{Criterion for convergence of likelihood}
 
 \item{control}{List of options passed to optim}
+
+\item{...}{Not implemented}
 }
 \value{
 A fitted model including effective size through time
 }
 \description{
 Maximum a posteriori estimate of effective size through time with a non-parametric growth model
-}
-\examples{
-#require(skygrowth)
-#require(ape)
-#load('NY_flu.rda') 
-#(tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
-#fit <- skygrowth.map( tr 
-# , res = 24*13  # Ne changes every 2 weeks
-# , tau0 = .1    # Smoothing parameter. If prior is not specified, this will also set the scale of the prior
-#)
-#plot( fit ) + scale_y_log10()
 }

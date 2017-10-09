@@ -16,6 +16,7 @@ It is based on 12 consecutive seasonal influenza seasons in NY state up to 2004.
 ```r
 require(skygrowth)
 require(ape)
+require(ggplot2)
 load(system.file( 'NY_flu.rda', package='skygrowth')  )
 (tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
 ```
@@ -38,7 +39,7 @@ fit <- skygrowth.map( tr
 ```
 
 ```r
-plot( fit ) + scale_y_log10()
+plot( fit ) 
 ```
 
 ![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-1.png)

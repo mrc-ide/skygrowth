@@ -6,8 +6,8 @@ Date: 2017-08-15
 Author: Erik M Volz and Xavier Didelot
 Maintainer: Erik M Volz <erik.volz@gmail.com>
 Description: This package provides methods for inferring effective population size for time-scaled phylogenies using Bayesian MCMC and maximum a priori. The growth rate of effective population sizes is modeled as a simple Brownian motion. 
-License: MIT
-Imports: Rcpp (>= 0.12.10), RcppArmadillo
+License: MIT + file LICENSE
+Imports: Rcpp (>= 0.12.10), RcppArmadillo, stats, graphics, ape
 LinkingTo: Rcpp,RcppArmadillo
 Suggests: ggplot2
 RoxygenNote: 6.0.1

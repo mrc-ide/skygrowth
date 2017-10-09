@@ -12,6 +12,8 @@ continue.skygrowth.mcmc(fit, mhsteps, quiet = F, ...)
 \item{mhsteps}{Additional MCMC steps to compute}
 
 \item{quiet}{Verbose output?}
+
+\item{...}{Passed on}
 }
 \value{
 A skygrowth.mcmc fit

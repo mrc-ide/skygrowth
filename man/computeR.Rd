@@ -4,7 +4,7 @@
 \alias{computeR}
 \title{Compute the reproduction number through time provided model fit and generation time}
 \usage{
-computeR(x, ...)
+computeR(fit, gamma)
 }
 \arguments{
 \item{fit}{A model fit}

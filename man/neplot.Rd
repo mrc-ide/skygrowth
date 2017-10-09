@@ -4,16 +4,16 @@
 \alias{neplot}
 \title{Plot effective size through time}
 \usage{
-neplot(x, ...)
+neplot(fit, ggplot = TRUE, logy = TRUE, ...)
 }
 \arguments{
-\item{...}{Additional parameters are passed to ggplot or the base plotting function}
-
 \item{fit}{A fitted object (eg skygrowth.map or skygrowth.mcmc)}
 
-\item{logy=TRUE}{If TRUE, the plot is returned with logarithmic y-axis}
+\item{ggplot}{If TRUE, returns a ggplot2 figure}
 
-\item{ggplot=TRUE}{If TRUE, returns a ggplot2 figure}
+\item{logy}{If TRUE, the plot is returned with logarithmic y-axis}
+
+\item{...}{Additional parameters are passed to ggplot or the base plotting function}
 }
 \value{
 A ggplot2 plot

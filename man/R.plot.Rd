@@ -4,14 +4,16 @@
 \alias{R.plot}
 \title{Plot reproduction number through time}
 \usage{
-R.plot(x, ...)
+R.plot(fit, gamma = NA, ggplot = TRUE, ...)
 }
 \arguments{
-\item{...}{Additional parameters are passed to ggplot or the base plotting function}
-
 \item{fit}{A fitted object (eg skygrowth.map)}
 
-\item{ggplot=TRUE}{If TRUE, returns a ggplot2 figure}
+\item{gamma}{Value of gamma}
+
+\item{ggplot}{If TRUE, returns a ggplot2 figure}
+
+\item{...}{Additional parameters are passed to ggplot or the base plotting function}
 }
 \value{
 A ggplot2 plot

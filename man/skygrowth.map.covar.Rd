@@ -11,9 +11,11 @@ skygrowth.map.covar(tre, formula, data, maxSampleTime, tau0 = 10,
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
 
-\item{formula}{An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
-data A data.frame, must include 'time' column
-maxSampleTime The scalar time that the most recent sample was collected}
+\item{formula}{An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne}
+
+\item{data}{A data.frame, must include 'time' column}
+
+\item{maxSampleTime}{The scalar time that the most recent sample was collected}
 
 \item{tau0}{Initial guess of the precision parameter}
 
@@ -30,6 +32,8 @@ maxSampleTime The scalar time that the most recent sample was collected}
 \item{abstol}{Criterion for convergence of likelihood}
 
 \item{control}{List of options passed to optim}
+
+\item{...}{Not implemented}
 }
 \value{
 A fitted model including effective size through time

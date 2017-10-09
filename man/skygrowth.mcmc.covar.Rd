@@ -12,9 +12,15 @@ skygrowth.mcmc.covar(tre, formula, data, maxSampleTime, iter = 1e+05,
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
 
-\item{formula}{An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
-data A data.frame, must include 'time' column
-maxSampleTime The scalar time that the most recent sample was collected}
+\item{formula}{An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne}
+
+\item{data}{A data.frame, must include 'time' column}
+
+\item{maxSampleTime}{The scalar time that the most recent sample was collected}
+
+\item{iter}{iter}
+
+\item{iter0}{iter0}
 
 \item{tau0}{Initial guess of the precision parameter}
 
@@ -24,13 +30,13 @@ maxSampleTime The scalar time that the most recent sample was collected}
 
 \item{beta_logpriors}{Optional list of functions providing log density for coefficients (must correspond to data)}
 
+\item{prop_beta_sd}{Standard deviation of beta proposal kernel}
+
 \item{quiet}{Provide verbose output?}
 
 \item{control}{List of options passed to optim}
 
-\item{mhsteps}{Number of mcmc steps}
-
-\item{abstol}{Criterion for convergence of likelihood}
+\item{...}{Not implemented}
 }
 \value{
 A fitted model including effective size through time

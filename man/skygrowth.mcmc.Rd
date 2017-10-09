@@ -23,7 +23,7 @@ skygrowth.mcmc(tre, mhsteps = 1e+05, tau0 = 10,
 
 \item{control}{List of options passed to optim}
 
-\item{abstol}{Criterion for convergence of likelihood}
+\item{...}{Not implemented}
 }
 \value{
 A fitted model including effective size through time

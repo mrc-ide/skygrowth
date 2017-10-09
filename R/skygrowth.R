@@ -1,4 +1,9 @@
-require(ape) 
+#' @importFrom Rcpp evalCpp
+#' @useDynLib skygrowth
+#' @import stats
+#' @import ape
+#' @importFrom graphics plot lines
+#' @importFrom utils installed.packages tail
 
 # derive timeseries of coalescent and ltt along appropriate time axis 
 .tre2df <- function( tre, xres){
@@ -87,17 +92,20 @@ require(ape)
 #' @param maxiter Maximum number of iterations
 #' @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param ... Not implemented
 #' @return A fitted model including effective size through time
-#' @examples
-#' #require(skygrowth)
-#' #require(ape)
-#' #load('NY_flu.rda') 
-#' #(tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
-#' #fit <- skygrowth.map( tr 
-#' # , res = 24*13  # Ne changes every 2 weeks
-#' # , tau0 = .1    # Smoothing parameter. If prior is not specified, this will also set the scale of the prior
-#' #)
-#' #plot( fit ) + scale_y_log10()
+#' @export
+# @examples
+# require(skygrowth)
+# require(ape)
+# load('NY_flu.rda') 
+# (tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
+# fit <- skygrowth.map( tr 
+#  , res = 24*13  # Ne changes every 2 weeks
+#  , tau0 = .1    # Smoothing parameter. If prior is not specified, 
+#                 # this will also set the scale of the prior
+# )
+# plot( fit ) + scale_y_log10()
 skygrowth.map <- function(tre
   , tau0 = 10
   , tau_logprior = 'exponential'
@@ -219,8 +227,8 @@ skygrowth.map <- function(tre
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
 #' @param formula An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
-#' data A data.frame, must include 'time' column
-#' maxSampleTime The scalar time that the most recent sample was collected
+#' @param data A data.frame, must include 'time' column
+#' @param maxSampleTime The scalar time that the most recent sample was collected
 #' @param tau0 Initial guess of the precision parameter
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
 #' @param beta_logpriors Optional list of functions providing log density for coefficients (must correspond to data)
@@ -229,8 +237,9 @@ skygrowth.map <- function(tre
 #' @param maxiter Maximum number of iterations
 #' @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param ... Not implemented
 #' @return A fitted model including effective size through time
-#' @examples
+#' @export
 skygrowth.map.covar =skygrowth.map.covars <- function(tre
   , formula # should not have left hand side 
   , data # data.frame must include 'time' 
@@ -455,10 +464,11 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
 #' @param res Number of time points (integer)
 #' @param quiet Provide verbose output? 
-#' @param abstol Criterion for convergence of likelihood
+# @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param ... Not implemented
 #' @return A fitted model including effective size through time
-#' @examples
+#' @export
 skygrowth.mcmc <- function(tre
   , mhsteps = 1e5
   , tau0 = 10
@@ -596,7 +606,9 @@ with( control, {
 #' @param fit A skygrowth.mcmc fit
 #' @param mhsteps Additional MCMC steps to compute
 #' @param quiet Verbose output? 
+#' @param ... Passed on
 #' @return A skygrowth.mcmc fit 
+#' @export
 continue.skygrowth.mcmc <- function( fit 
  , mhsteps
  , quiet = F
@@ -623,18 +635,22 @@ continue.skygrowth.mcmc <- function( fit
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
 #' @param formula An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
-#' data A data.frame, must include 'time' column
-#' maxSampleTime The scalar time that the most recent sample was collected
-#' @param mhsteps Number of mcmc steps
+#' @param data A data.frame, must include 'time' column
+#' @param maxSampleTime The scalar time that the most recent sample was collected
+#' @param iter iter
+#' @param iter0 iter0
+# @param mhsteps Number of mcmc steps
 #' @param tau0 Initial guess of the precision parameter
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
-#' @param beta_logpriors Optional list of functions providing log density for coefficients (must correspond to data)
 #' @param res Number of time points (integer)
+#' @param beta_logpriors Optional list of functions providing log density for coefficients (must correspond to data)
+#' @param prop_beta_sd Standard deviation of beta proposal kernel
 #' @param quiet Provide verbose output? 
-#' @param abstol Criterion for convergence of likelihood
+# @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param ... Not implemented
 #' @return A fitted model including effective size through time
-#' @examples
+#' @export
 skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
   , formula # should not have left hand side 
   , data # data.frame must include 'time' 
@@ -867,8 +883,10 @@ with( control, {
 #' @param fit A model fit 
 #' @param gamma Per-capita death or recovery rate; equivalent to 1/generation time
 #' @return Fitted object with $R attribute
-computeR <- function(x, ...){
-	UseMethod('computeR', x )
+#' @export
+computeR <- function(fit, gamma){
+  if (inherits(fit, "skygrowth.map")) computeR.skygrowth.map(fit,gamma)
+  if (inherits(fit, "skygrowth.mcmc")) computeR.skygrowth.mcmc(fit,gamma)
 }
 
 computeR.skygrowth.map <- function(fit, gamma )
@@ -899,33 +917,40 @@ computeR.skygrowth.mcmc <- function(fit, gamma )
 #' Plot effective size through time 
 #'
 #' @param fit A fitted object (eg skygrowth.map or skygrowth.mcmc)
-#' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
-#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param logy  If TRUE, the plot is returned with logarithmic y-axis
+#' @param ggplot  If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
-neplot <- function(x, ...){
-	UseMethod( 'neplot', x )
+#' @export
+neplot <- function(fit, ggplot=TRUE, logy=TRUE, ... ){
+  if (inherits(fit, "skygrowth.map")) neplot.skygrowth.map(fit, ggplot, logy, ... )
+  if (inherits(fit, "skygrowth.mcmc")) neplot.skygrowth.mcmc(fit, ggplot, logy, ...)
 }
 
 #' Plot growth rate of effective size through time 
 #'
 #' @param fit A fitted object (eg skygrowth.map)
-#' @param logy=TRUE  If TRUE, the plot is returned with logarithmic y-axis
-#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param logy  If TRUE, the plot is returned with logarithmic y-axis
+#' @param ggplot  If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
-growth.plot <- function(x, ... ){
-	UseMethod( 'growth.plot', x )
+#' @export
+growth.plot <- function(fit , ggplot=TRUE, logy=FALSE, ...){
+  if (inherits(fit, "skygrowth.map")) growth.plot.skygrowth.map(fit,ggplot,logy,...)
+  if (inherits(fit, "skygrowth.mcmc")) growth.plot.skygrowth.mcmc(fit,ggplot,logy,...)
 }
 
 #' Plot reproduction number through time 
 #'
 #' @param fit A fitted object (eg skygrowth.map)
-#' @param ggplot=TRUE  If TRUE, returns a ggplot2 figure
+#' @param gamma Value of gamma
+#' @param ggplot If TRUE, returns a ggplot2 figure
 #' @param ... Additional parameters are passed to ggplot or the base plotting function
 #' @return A ggplot2 plot
-R.plot <- function(x, ... ){
-	UseMethod( 'R.plot', x )
+#' @export
+R.plot <- function(fit, gamma = NA, ggplot=TRUE,...){
+  if (inherits(fit, "skygrowth.map")) R.plot.skygrowth.map(fit,gamma,ggplot)
+  if (inherits(fit, "skygrowth.mcmc")) R.plot.skygrowth.mcmc(fit,gamma,ggplot)
 }
 
 neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
@@ -934,11 +959,10 @@ neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 	ne <- fit$ne
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
 		pldf <- data.frame( t = fit$time,  nemed = ne, nelb = fit$ne_ci[,1], neub = fit$ne_ci[,3] )
-		pl <- ggplot( pldf, aes( x = t, y = nemed) , ...) + geom_line()+ ylab('Effective population size') + xlab('Time before most recent sample')
-		pl <- pl + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2)
-		if (logy) pl <- pl + scale_y_log10() 
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = nemed) , ...) + ggplot2::geom_line()+ ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
+		pl <- pl + ggplot2::geom_ribbon( ggplot2::aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2)
+		if (logy) pl <- pl + ggplot2::scale_y_log10() 
 		return(pl)
 	} else{
 		if (logy)
@@ -956,10 +980,9 @@ growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 	stopifnot(inherits(fit, "skygrowth.map"))
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
 		pldf <- data.frame( t = fit$time, gr = fit$growth)
-		pl <- ggplot( pldf, aes( x = t, y = gr), ... ) + geom_line() + ylab('Growth rate') + xlab('Time before most recent sample')
-		if (logy) pl <- pl + scale_y_log10() 
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = gr), ... ) + ggplot2::geom_line() + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		if (logy) pl <- pl + ggplot2::scale_y_log10() 
 		return(pl)
 	} else{
 		if (logy)
@@ -976,13 +999,12 @@ R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 	stopifnot(inherits(fit, "skygrowth.map"))
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
 		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
 		if (is.na(gamma)) gamma <- fit$gamma
 		i <- 1:(length(fit$time)-1)
 		fit <- computeR.skygrowth.map( fit, gamma )
 		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
-		ggplot( pldf, aes( x = t, y = R) , ...) + geom_line() + ylab('Reproduction number') + xlab('Time before most recent sample')
+		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = R) , ...) + ggplot2::geom_line() + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
 		if (logy)
 			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Reproduction number', ...)
@@ -993,6 +1015,7 @@ R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 	}
 }
 
+#' @export
 plot.skygrowth.map <- function( x,  ... ){
 	neplot( x, ...) 
 }
@@ -1003,11 +1026,9 @@ neplot.skygrowth.mcmc <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 	ne <- fit$ne_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
-		
 		pldf <- data.frame( t = fit$time, nelb = ne[,1], nemed = ne[,2], neub = ne[,3] )
-		pl <- ggplot( pldf, aes( x = t, y = nemed), ... ) + geom_line() + geom_ribbon( aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2) + ylab('Effective population size') + xlab('Time before most recent sample')
-		if (logy) pl <- pl + scale_y_log10()
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = nemed), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2) + ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
+		if (logy) pl <- pl + ggplot2::scale_y_log10()
 		return(pl)
 	} else{
 		if (logy)
@@ -1026,10 +1047,9 @@ growth.plot.skygrowth.mcmc <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 	x <- fit$growthrate_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-		pl <- ggplot( pldf, aes( x = t, y = med), ... ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Growth rate') + xlab('Time before most recent sample')
-		if (logy) pl <- pl + scale_y_log10()
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = med), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		if (logy) pl <- pl + ggplot2::scale_y_log10()
 		return(pl) 
 	} else{
 		if (logy)
@@ -1050,15 +1070,14 @@ R.plot.skygrowth.mcmc <- function(fit, gamma = NA, ggplot=TRUE )
 	x <- fit$R_ci
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		require(ggplot2)
 		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
 		if (is.na(gamma)) gamma <- fit$gamma
 		
 		
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-		ggplot( pldf, aes( x = t, y = med) ) + geom_line() + geom_ribbon( aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ylab('Reproduction number') + xlab('Time before most recent sample')
+		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = med) ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
-		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
+		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number')
 		
 		lines( fit$time, x[,1] , lty=3)
 		lines( fit$time, x[,3] , lty=3)
@@ -1066,6 +1085,7 @@ R.plot.skygrowth.mcmc <- function(fit, gamma = NA, ggplot=TRUE )
 	}
 }
 
+#' @export
 plot.skygrowth.mcmc <- function( x, ... ){
 	neplot( x, ...) 
 }
@@ -1073,34 +1093,41 @@ plot.skygrowth.mcmc <- function( x, ... ){
 
 ## print and summary methods
 
-print.skygrowth.mcmc <- function(fit, ...)
+#' @export
+print.skygrowth.mcmc <- function(x, ...)
 {
-	stopifnot(inherits(fit, "skygrowth.mcmc"))
+	stopifnot(inherits(x, "skygrowth.mcmc"))
 	cat( 'Bayesian non parametric moving average phylodynamic model\n')
-	cat(paste( 'Effective population size bins:', ncol(fit$ne), '\n'))
-	cat(paste( 'Iterations:', ncol(fit$ne), '\n'))
+	cat(paste( 'Effective population size bins:', ncol(x$ne), '\n'))
+	cat(paste( 'Iterations:', ncol(x$ne), '\n'))
 	cat('Effective population size at last iteration:\n')
-	i <- seq(1, length(fit$tim), le = 5)
-	print( rbind( fit$times[ i] , fit$ne[ncol(fit$ne), i] ) )
-	invisible( fit )
+	i <- seq(1, length(x$tim), le = 5)
+	print( rbind( x$times[ i] , x$ne[ncol(x$ne), i] ) )
+	invisible( x )
 }
-summary.skygrowth.mcmc <- function(fit, ...){
-	print.skygrowth.mcmc( fit )
+
+#' @export
+summary.skygrowth.mcmc <- function(object, ...){
+	print.skygrowth.mcmc( object )
 }
-print.skygrowth.map <- function(fit, ...)
+
+#' @export
+print.skygrowth.map <- function(x, ...)
 {
-	stopifnot(inherits(fit, "skygrowth.map"))
+	stopifnot(inherits(x, "skygrowth.map"))
 	cat( 'Maximum a posteriori non parametric moving average phylodynamic model\n')
-	cat(paste( 'Effective population size bins:', length(fit$ne), '\n'))
+	cat(paste( 'Effective population size bins:', length(x$ne), '\n'))
 	cat('Effective population size at last iteration:\n')
-	i <- 1:length(fit$time) #seq(1, length(fit$tim), le = 5)
-	print( data.frame( Time=fit$times[ i] , Ne=fit$ne[i] ) )
+	i <- 1:length(x$time) #seq(1, length(x$tim), le = 5)
+	print( data.frame( Time=x$times[ i] , Ne=x$ne[i] ) )
 	cat('Drift pararameter (tau):\n')
-	print( fit$tau )
-	invisible( fit )
+	print( x$tau )
+	invisible( x )
 }
-summary.skygrowth.map <- function(fit, ...){
-	print( fit )
+
+#' @export
+summary.skygrowth.map <- function(object, ...){
+	print( object )
 }
 
 
