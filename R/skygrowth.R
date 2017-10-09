@@ -885,8 +885,8 @@ with( control, {
 #' @return Fitted object with $R attribute
 #' @export
 computeR <- function(fit, gamma){
-  if (inherits(fit, "skygrowth.map")) computeR.skygrowth.map(fit,gamma)
-  if (inherits(fit, "skygrowth.mcmc")) computeR.skygrowth.mcmc(fit,gamma)
+  if (inherits(fit, "skygrowth.map")) return(computeR.skygrowth.map(fit,gamma))
+  if (inherits(fit, "skygrowth.mcmc")) return(computeR.skygrowth.mcmc(fit,gamma))
 }
 
 computeR.skygrowth.map <- function(fit, gamma )
@@ -923,8 +923,8 @@ computeR.skygrowth.mcmc <- function(fit, gamma )
 #' @return A ggplot2 plot
 #' @export
 neplot <- function(fit, ggplot=TRUE, logy=TRUE, ... ){
-  if (inherits(fit, "skygrowth.map")) neplot.skygrowth.map(fit, ggplot, logy, ... )
-  if (inherits(fit, "skygrowth.mcmc")) neplot.skygrowth.mcmc(fit, ggplot, logy, ...)
+  if (inherits(fit, "skygrowth.map")) return(neplot.skygrowth.map(fit, ggplot, logy, ... ))
+  if (inherits(fit, "skygrowth.mcmc")) return(neplot.skygrowth.mcmc(fit, ggplot, logy, ...))
 }
 
 #' Plot growth rate of effective size through time 
@@ -936,8 +936,8 @@ neplot <- function(fit, ggplot=TRUE, logy=TRUE, ... ){
 #' @return A ggplot2 plot
 #' @export
 growth.plot <- function(fit , ggplot=TRUE, logy=FALSE, ...){
-  if (inherits(fit, "skygrowth.map")) growth.plot.skygrowth.map(fit,ggplot,logy,...)
-  if (inherits(fit, "skygrowth.mcmc")) growth.plot.skygrowth.mcmc(fit,ggplot,logy,...)
+  if (inherits(fit, "skygrowth.map")) return(growth.plot.skygrowth.map(fit,ggplot,logy,...))
+  if (inherits(fit, "skygrowth.mcmc")) return(growth.plot.skygrowth.mcmc(fit,ggplot,logy,...))
 }
 
 #' Plot reproduction number through time 
@@ -949,8 +949,8 @@ growth.plot <- function(fit , ggplot=TRUE, logy=FALSE, ...){
 #' @return A ggplot2 plot
 #' @export
 R.plot <- function(fit, gamma = NA, ggplot=TRUE,...){
-  if (inherits(fit, "skygrowth.map")) R.plot.skygrowth.map(fit,gamma,ggplot)
-  if (inherits(fit, "skygrowth.mcmc")) R.plot.skygrowth.mcmc(fit,gamma,ggplot)
+  if (inherits(fit, "skygrowth.map")) return(R.plot.skygrowth.map(fit,gamma,ggplot))
+  if (inherits(fit, "skygrowth.mcmc")) return(R.plot.skygrowth.mcmc(fit,gamma,ggplot))
 }
 
 neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
@@ -1006,11 +1006,7 @@ R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
 		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = R) , ...) + ggplot2::geom_line() + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
-		if (logy)
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Reproduction number', ...)
-		else
 			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
-		
 		invisible(fit)	
 	}
 }
@@ -1101,8 +1097,8 @@ print.skygrowth.mcmc <- function(x, ...)
 	cat(paste( 'Effective population size bins:', ncol(x$ne), '\n'))
 	cat(paste( 'Iterations:', ncol(x$ne), '\n'))
 	cat('Effective population size at last iteration:\n')
-	i <- seq(1, length(x$tim), le = 5)
-	print( rbind( x$times[ i] , x$ne[ncol(x$ne), i] ) )
+	i <- 1:length(x$time) #seq(1, length(x$tim), le = 5)
+	print( data.frame( Time=x$time[ i] , Ne=x$ne[i] ) )
 	invisible( x )
 }
 
@@ -1119,7 +1115,7 @@ print.skygrowth.map <- function(x, ...)
 	cat(paste( 'Effective population size bins:', length(x$ne), '\n'))
 	cat('Effective population size at last iteration:\n')
 	i <- 1:length(x$time) #seq(1, length(x$tim), le = 5)
-	print( data.frame( Time=x$times[ i] , Ne=x$ne[i] ) )
+	print( data.frame( Time=x$time[ i] , Ne=x$ne[i] ) )
 	cat('Drift pararameter (tau):\n')
 	print( x$tau )
 	invisible( x )
