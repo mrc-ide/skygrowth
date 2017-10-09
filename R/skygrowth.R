@@ -179,9 +179,15 @@ skygrowth.map <- function(tre
 	  , xtau = tau
 	  , hessian=TRUE 
 	) -> f
-	#~ browser()
-	fi <- solve( -f$hessian)
-	fsigma <- sqrt( diag( fi ))
+	fi <- tryCatch( solve( -f$hessian), error = function(e) {
+		warning('Hessian could not be computed. Will not compute CIs.')
+		NA
+	})
+	fsigma <- if (!any(is.na(fi))) {
+		sqrt( diag( fi ))
+	} else{
+		NA
+	}
 	
 	ne <- (exp(fit$par) ) #note forward time now
 	nelb <- exp( (fit$par) - fsigma*1.96 )
