@@ -887,9 +887,8 @@ computeR.skygrowth.map <- function(fit, gamma )
 	stopifnot(inherits(fit, "skygrowth.map"))
 	D <- 1/gamma
 	# r = (R0 - 1) / D
-	dh <- abs(diff(fit$tim)[1])
 	fit$gamma = gamma 
-	fit$R <- (fit$growth/dh) * D + 1
+	fit$R <- fit$growth * D + 1
 	fit
 }
 
@@ -898,9 +897,8 @@ computeR.skygrowth.mcmc <- function(fit, gamma )
 	stopifnot(inherits(fit, "skygrowth.mcmc"))
 	D <- 1/gamma
 	# r = (R0 - 1) / D
-	dh <- abs(diff(fit$tim)[1])
 	fit$gamma = gamma 
-	fit$R <- (fit$growthrate/dh) * D + 1
+	fit$R <- fit$growthrate * D + 1
 	fit$R_ci <- t( sapply(1:ncol( fit$R ), function(i) quantile( fit$R[, i], prob = c( .025 , .5, .975 ), na.rm=T) ) )
 	fit
 }
