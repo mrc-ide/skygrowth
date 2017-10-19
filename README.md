@@ -6,9 +6,6 @@ This package includes functions for
 * incorporating time-varying covariates into phylodynamic inference. This is appropriate if the covariate is expected to alter the growth rate of effective population size
 * computing the reproduction number (expected number of offspring) through time given prior information about the generation interval
 
-## Rabies virus
-TODO
-
 ## H3N2 influenza in New York
 This data set is provided in the phylodyn R package by Karcher et al. 
 It is based on 12 consecutive seasonal influenza seasons in NY state up to 2004. 
