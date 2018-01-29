@@ -988,18 +988,19 @@ growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 {
 	stopifnot(inherits(fit, "skygrowth.map"))
+	if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
+	if (is.na(gamma)) gamma <- fit$gamma
+	fit <- computeR.skygrowth.map( fit, gamma )
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
-		if ( is.na(fit$gamma) & is.na(gamma)) stop('Removal rate (gamma) must be supplied')
-		if (is.na(gamma)) gamma <- fit$gamma
 		i <- 1:(length(fit$time)-1)
-		fit <- computeR.skygrowth.map( fit, gamma )
 		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
 		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = R) , ...) + ggplot2::geom_line() + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
+		plot( fit$time, fit$R, lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
 		invisible(fit)	
 	}
+	
 }
 
 #' @export
