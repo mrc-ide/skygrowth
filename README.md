@@ -8,7 +8,7 @@ This package includes functions for
 
 ## To cite
 
-Erik Volz and Xavier Didelot, __Modeling the growth and decline of pathogen effective population size provides insight into epidemic dynamics and drivers of antimicrobial resistance__, Submitted 2017
+Erik Volz and Xavier Didelot, [Modeling the growth and decline of pathogen effective population size provides insight into epidemic dynamics and drivers of antimicrobial resistance](https://doi.org/10.1093/sysbio/syy007), Systematic Biology, 2018
 
 ## H3N2 influenza in New York
 This data set is provided in the phylodyn R package by Karcher et al. 
