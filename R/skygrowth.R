@@ -957,9 +957,9 @@ neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 		return(pl)
 	} else{
 		if (logy)
-			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Effective population size', ...)
+			plot( fit$time, ne, ylim=range(fit$ne_c[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Effective population size', ...)
 		else
-			plot( fit$time, ne, lwd =2, col = 'black', type = 'l', xlab='Time', ylab='Effective population size', ...)
+			plot( fit$time, ne, ylim=range(fit$ne_c[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l', xlab='Time', ylab='Effective population size', ...)
 		lines( fit$time, fit$ne_c[,1] , lty=3)
 		lines( fit$time, fit$ne_c[,3] , lty=3)
 		invisible(fit)
@@ -979,7 +979,7 @@ growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 		if (logy)
 			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Growth rate',...)
 		else
-			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', ...)
+			plot( fit$time, fit$growth, lwd =2, col = 'black', type = 'l', xlab='Time', ylab='Growth rate', ...)
 		
 		invisible(fit)
 	}
@@ -1020,9 +1020,9 @@ neplot.skygrowth.mcmc <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 		return(pl)
 	} else{
 		if (logy)
-			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Effective population size', ...)
+			plot( fit$time, ne[,2], ylim=range(ne[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l', log='y',xlab='Time', ylab='Effective population size', ...)
 		else
-			plot( fit$time, ne[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Effective population size', ...)
+			plot( fit$time, ne[,2], ylim=range(ne[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Effective population size', ...)
 		lines( fit$time, ne[,1] , lty=3)
 		lines( fit$time, ne[,3] , lty=3)
 		invisible(fit)
@@ -1041,9 +1041,9 @@ growth.plot.skygrowth.mcmc <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 		return(pl) 
 	} else{
 		if (logy)
-			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Growth rate', ...)
+			plot( fit$time, x[,2], ylim=range(x[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l', log='y', xlab='Time', ylab='Growth rate', ...)
 		else
-			plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Growth rate', ...)
+			plot( fit$time, x[,2], ylim=range(x[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Growth rate', ...)
 		#
 		lines( fit$time, x[,1] , lty=3)
 		lines( fit$time, x[,3] , lty=3)
@@ -1065,7 +1065,7 @@ R.plot.skygrowth.mcmc <- function(fit, gamma = NA, ggplot=TRUE )
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
 		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = med) ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
-		plot( fit$time, x[,2], lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number')
+		plot( fit$time, x[,2], ylim=range(x[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number')
 		
 		lines( fit$time, x[,1] , lty=3)
 		lines( fit$time, x[,3] , lty=3)
