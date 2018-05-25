@@ -1,59 +1,58 @@
-# derive timeseries of coalescent and ltt along appropriate time axis 
-.tre2df <- function( tre, xres){
-	res <- xres + 1
+#' derive timeseries of coalescent and ltt along appropriate time axis 
+#' @param haxis vector retrospective time axis increasing order 
+.tre2df <- function( tre, haxis){
+	res <- length(haxis)
 	n <- length( tre$tip )
 	D <- node.depth.edgelength( tre )
 	rh <- max( D[1:n] )
-	h <- seq( 0 , rh , le = res )
 	sts <- D[1:n]
-	shs <- rh - sts 
-	inhs <- rh - D[ (n+1):(n + tre$Nnode) ]
+	
+	shs <- max(sts) - sts
+	
+	inhs <- max(sts) - D[ (n+1):(n + tre$Nnode) ]
+	
 	ltt.h <- function(h) sum( shs < h ) - sum( inhs < h )
-	nco <- sapply( 2:res, function(i) sum( ( inhs >  h[i-1] ) & ( inhs <= h[i] ) ) )
-	ltt <- sapply( 2:res, function(i) sqrt( ltt.h( h[i-1] ) * ltt.h( h[i] )) )
-	
-	coint <- coalescent.intervals( tre )
-	with( coint , {
-		abs(interval.length) * ( lineages * (lineages-1) / 2) 
-	}) -> ne
-	ne[ ne == 0 ] <- NA
-	ne0 <- median( ne, na.rm=T)
-	
+	nco <- sapply( 2:res, function(i) sum( ( inhs >  haxis[i-1] ) & ( inhs <= haxis[i] ) ) )
+	ltt <- sapply( 2:res, function(i) sqrt( ltt.h( haxis[i-1] ) * ltt.h( haxis[i] )) )
+		
 	# derive terms for coalescent likelihood 
 	#alpha = {A choose 2} ; gamma = 1/ Ne
 	#alpha gamma exp( -alpha gamma dh )
 	# log(alpha) + log(gamma)^nc - alpha gamma dh 
-	events <- cbind( c( h[-1], inhs, shs ), c( rep(0, length(h)-1), rep(1, length(inhs)), rep(2, length(shs)) ) )
+	events <- cbind( c( haxis[-1], inhs, shs ), c( rep(0, length(haxis)-1), rep(1, length(inhs)), rep(2, length(shs)) ) )
 	events <- events[ order( events[,1]) , ]
-	lterms <- matrix(0.,  nrow = length(h) -1, ncol = 2 )
-	dh <- abs( diff( h)[1] )
-	.h2i <- function(hh) min( 1 + floor( hh / dh ), length( h) -1 )
+	lterms <- matrix(0.,  nrow = length(haxis) -1, ncol = 2 )
+	dh <- abs( diff( haxis)[1] )
+	.h2i <- function(hh) min( 1 + floor( hh / dh ), length( haxis) -1 )
 	lasth <- 0
 	difh <- NA
 	for (k in 1:nrow(events)){
 		et <- events[k,2] # event type
 		hh <- events[k,1] 
 		i <- .h2i(  hh ) 
-		difh <- hh - lasth
-		if (et == 1 ){ #co
-			A <- max(1, ltt.h( hh ) )
-			alpha <- ( A * (A - 1)/2 )
-			lterms[i,1] <- lterms[i,1] + log(alpha) # + gamma
-			lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
-		}
-		if (et == 2){ #sample
-			A <- max(1, ltt.h( hh ) )
-			alpha <- ( A * (A - 1)/2 )
-			lterms[i,1] <- lterms[i,1] + 0 # no change 
-			lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
-		}
-		
+		if (i > 0 & i <= length(haxis) )
+		{
+			difh <- hh - lasth
+			if (et == 1 ){ #co
+				A <- max(1, ltt.h( hh ) )
+				alpha <- ( A * (A - 1)/2 )
+				lterms[i,1] <- lterms[i,1] + log(alpha) # + gamma
+				lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
+			}
+			if (et == 2){ #sample
+				A <- max(1, ltt.h( hh ) )
+				alpha <- ( A * (A - 1)/2 )
+				lterms[i,1] <- lterms[i,1] + 0 # no change 
+				lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
+			}
+		}	
 		lasth <- hh 
 	}
 	# NOTE lterms on forward axis
 	lterms <- lterms[ rev( 1:nrow(lterms)), ]
 	
-	data.frame( heights = h[-1],  nco = nco , ltt = ltt, ne0 =ne0 , lterms = lterms)
+	# NOTE not counting most recent sample 
+	data.frame( heights = haxis[-1],  nco = nco , ltt = ltt, lterms = lterms)
 }
 
 
@@ -77,10 +76,10 @@
 
 #' Maximum a posteriori estimate of effective size through time with a non-parametric growth model
 #'
-#' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
+#' @param tre A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object
 #' @param tau0 Initial guess of the precision parameter
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
-#' @param res Number of time points (integer)
+#' @param res Number of time intervals (integer)
 #' @param quiet Provide verbose output? 
 #' @param maxiter Maximum number of iterations
 #' @param abstol Criterion for convergence of likelihood
@@ -88,17 +87,19 @@
 #' @param ... Not implemented
 #' @return A fitted model including effective size through time
 #' @export
-# @examples
-# require(skygrowth)
-# require(ape)
-# load('NY_flu.rda') 
-# (tr <- NY_flu) # NOTE branch lengths in weeks  / 13 years in all
-# fit <- skygrowth.map( tr 
-#  , res = 24*13  # Ne changes every 2 weeks
-#  , tau0 = .1    # Smoothing parameter. If prior is not specified, 
-#                 # this will also set the scale of the prior
-# )
-# plot( fit ) + scale_y_log10()
+#' @examples
+#' \doNotRun{
+#' require(skygrowth)
+#' require(ape)
+#' load( system.file( package='skygrowth', 'NY_flu.rda' , mustWork=TRUE) ) 
+#' # NOTE branch lengths in weeks  / 13 years in all
+#' fit <- skygrowth.map( NY_flu 
+#'  , res = 24*13  # Ne changes every 2 weeks
+#'  , tau0 = .1    # Smoothing parameter. If prior is not specified, 
+#'                 # this will also set the scale of the prior
+#' )
+#' plot( fit ) + scale_y_log10()
+#' }
 skygrowth.map <- function(tre
   , tau0 = 10
   , tau_logprior = 'exponential'
@@ -107,14 +108,39 @@ skygrowth.map <- function(tre
   , maxiter = 20
   , abstol = 1e-2
   , control = NULL
+  , maxHeight = NULL 
   , ... #not implemented
 ){
-	tredat <- .tre2df( tre, res )
-	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
-	dh <- abs(diff(tredat$heights)[1] )
+	if (class(tre)=='phylo'){
+		tres <- list( tre )
+	}else if( class(tre)=='multi.phylo' | class(tre)=='list'){
+		tres <- tre
+	} else{
+		stop('*tre* must be a ape::phylo or multi.phylo or list of ape::phylo')
+	}
 	
-	ne <- tredat$ne0
-	ne <- rlnorm( length( ne) , log( ne ), .2 ) # add some jitter
+	n <- Ntip(tres[[1]])
+	if (is.null(maxHeight)){
+		maxHeight <- max(sapply( tres, function(tr){
+			D <- node.depth.edgelength( tre )
+			max( D[1:n] )
+		})) 
+	}
+	haxis <- seq( 0, maxHeight, length.out = res+1 )
+	dh <- abs( haxis[2] - haxis[1] )
+	
+	## ne0 
+	ne0 <- median( sapply( tres, function(tre ){
+		coint <- coalescent.intervals( tre )
+		with( coint , {
+			abs(interval.length) * ( lineages * (lineages-1) / 2) 
+		}) -> ne
+		ne[ ne == 0 ] <- NA
+		median( ne, na.rm=T)
+	}))
+	
+	tredats <- lapply( tres, function(tre) .tre2df( tre, haxis  ))
+	lterms_list  <- lapply( tredats, function(tredat) cbind( tredat$lterms.1, tredat$lterms.2) )
 	
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
@@ -122,13 +148,15 @@ skygrowth.map <- function(tre
 	.of1.2 <- function(  logne , xtau = tau0)
 	{
 		fwdne <- exp(logne)
-		
-		ll <-  sum(  lterms[,1] + log( 1/fwdne ) * rev( tredat$nco ) )
-		ll <- ll - sum( lterms[,2] / fwdne )
-		
-#~ 		grs <- diff ( logne ) / ( logne[-res] ) / dh # TODO
 		grs <- ( diff ( fwdne ) / ( fwdne[-res] ) / dh )
-		ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+		ll <- 0
+		for ( k in 1:length( tredats ))
+		{
+			ll <-  sum(  lterms_list[[k]] [,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
+			ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
+			ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+		}
+		
 		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
@@ -138,9 +166,11 @@ skygrowth.map <- function(tre
 		.of1.2( log( xne ) , xtau = exp( logtau ) )
 	}
 	
+	ne <- rlnorm( res , log( ne0 ), .2 ) # add some jitter
+	
 	optim( par = log(ne), fn = .of1.2
 	  , method = 'BFGS'
-	  , control = list( trace = 1, fnscale  = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
+	  , control = list( trace = 1, fnscale = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
 	) -> fit
 	
 	trace <- matrix( NA, nrow = maxiter, ncol = 2 + res )
@@ -195,15 +225,16 @@ skygrowth.map <- function(tre
 	neub <- exp( (fit$par) + fsigma*1.96 )
 	ne_ci <- cbind( nelb, ne, neub )
 	
-	growthrate <-  c( diff ( exp( fit$par) ) / ( exp(fit$par)[-res] ) / dh , NA)
+	growthrate <-  c( diff ( exp( fit$par) ) / ( exp(fit$par)[-res] ) / dh , NA) 
 	
+	#TODO this is not good; should use max height of all trees or allow user to provide upper bound of axis 
 	rv <- list( 
 		ne =  ne
 	  , ne_ci = ne_ci  
 	  , growthrate =  growthrate
 	  , tau = tau
-	  , time = rev(-tredat$heights )
-	  , tredat = tredat
+	  , time = haxis
+	  , tredat = tredats
 	  , gamma = NA
 	  , control = control
 	  , tre = tre	

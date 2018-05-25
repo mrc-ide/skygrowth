@@ -1,7 +1,7 @@
 Package: skygrowth
 Type: Package
 Title: Phylodynamic inference with nonparametric growth rate models
-Version: 0.1
+Version: 0.2.0
 Date: 2017-08-15
 Author: Erik M Volz and Xavier Didelot
 Maintainer: Erik M Volz <erik.volz@gmail.com>

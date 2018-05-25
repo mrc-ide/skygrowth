@@ -5,10 +5,11 @@
 \title{Maximum a posteriori estimate of effective size through time with a non-parametric growth model}
 \usage{
 skygrowth.map(tre, tau0 = 10, tau_logprior = "exponential", res = 50,
-  quiet = FALSE, maxiter = 20, abstol = 0.01, control = NULL, ...)
+  quiet = FALSE, maxiter = 20, abstol = 0.01, control = NULL,
+  maxHeight = NULL, ...)
 }
 \arguments{
-\item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
+\item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object}
 
 \item{tau0}{Initial guess of the precision parameter}
 
@@ -31,4 +32,18 @@ A fitted model including effective size through time
 }
 \description{
 Maximum a posteriori estimate of effective size through time with a non-parametric growth model
+}
+\examples{
+\\doNotRun{
+require(skygrowth)
+require(ape)
+load( system.file( package='skygrowth', 'NY_flu.rda' , mustWork=TRUE) ) 
+# NOTE branch lengths in weeks  / 13 years in all
+fit <- skygrowth.map( NY_flu 
+ , res = 24*13  # Ne changes every 2 weeks
+ , tau0 = .1    # Smoothing parameter. If prior is not specified, 
+                # this will also set the scale of the prior
+)
+plot( fit ) + scale_y_log10()
+}
 }
