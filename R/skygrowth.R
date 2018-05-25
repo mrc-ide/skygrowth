@@ -74,6 +74,12 @@
 	tau_logprior 
 }
 
+.meanlogexp <- function(x)
+{
+	m <- max( x)
+	log( mean( exp( x - m ) ) ) + m
+}
+
 #' Maximum a posteriori estimate of effective size through time with a non-parametric growth model
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object
@@ -84,6 +90,7 @@
 #' @param maxiter Maximum number of iterations
 #' @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param maxHeight The earliest time (furthest time in to the past) to estimate Ne. If not provided, will use the median of root heights for input trees 
 #' @param ... Not implemented
 #' @return A fitted model including effective size through time
 #' @export
@@ -121,14 +128,13 @@ skygrowth.map <- function(tre
 	
 	n <- Ntip(tres[[1]])
 	if (is.null(maxHeight)){
-		maxHeight <- max(sapply( tres, function(tr){
-			D <- node.depth.edgelength( tre )
+		maxHeight <- median(sapply( tres, function(tr){ #NOTE median not max
+			D <- node.depth.edgelength( tr )
 			max( D[1:n] )
 		})) 
 	}
 	haxis <- seq( 0, maxHeight, length.out = res+1 )
 	dh <- abs( haxis[2] - haxis[1] )
-	
 	## ne0 
 	ne0 <- median( sapply( tres, function(tre ){
 		coint <- coalescent.intervals( tre )
@@ -150,13 +156,13 @@ skygrowth.map <- function(tre
 		fwdne <- exp(logne)
 		grs <- ( diff ( fwdne ) / ( fwdne[-res] ) / dh )
 		ll <- 0
-		for ( k in 1:length( tredats ))
+		lls <- sapply( 1:length(tredats), function(k)
 		{
-			ll <-  sum(  lterms_list[[k]] [,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
+			ll <-  sum(  lterms_list[[k]][,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
 			ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
 			ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
-		}
-		
+		})
+		ll <- .meanlogexp( lls )
 		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
@@ -227,13 +233,12 @@ skygrowth.map <- function(tre
 	
 	growthrate <-  c( diff ( exp( fit$par) ) / ( exp(fit$par)[-res] ) / dh , NA) 
 	
-	#TODO this is not good; should use max height of all trees or allow user to provide upper bound of axis 
 	rv <- list( 
 		ne =  ne
 	  , ne_ci = ne_ci  
 	  , growthrate =  growthrate
 	  , tau = tau
-	  , time = haxis
+	  , time = haxis[-1]
 	  , tredat = tredats
 	  , gamma = NA
 	  , control = control
@@ -249,7 +254,7 @@ skygrowth.map <- function(tre
 
 #' Maximum a posteriori estimate of effective size through time using covariate data
 #'
-#' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
+#' @param tre A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object
 #' @param formula An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne
 #' @param data A data.frame, must include 'time' column
 #' @param maxSampleTime The scalar time that the most recent sample was collected
@@ -261,6 +266,7 @@ skygrowth.map <- function(tre
 #' @param maxiter Maximum number of iterations
 #' @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
+#' @param maxHeight The earliest time (furthest time in to the past) to estimate Ne
 #' @param ... Not implemented
 #' @return A fitted model including effective size through time
 #' @export
@@ -276,13 +282,11 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
   , maxiter = 20
   , abstol = 1e-2
   , control = NULL
+  , maxHeight = NULL
   , ... #not implemented
 ){
+	stopifnot( class(formula)=='formula' )
 	if (!('time' %in% colnames(data))) stop('covariate data must include *time* of observation' )
-	tredat <- .tre2df( tre, res )
-	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
-	dh <- abs(diff(tredat$heights)[1] )
-	
 	# fit w/o covars first 
 	mapfit <- skygrowth.map(tre
 	  , tau0 = tau0
@@ -291,8 +295,14 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 	  , quiet = quiet
 	  , maxiter = min( 20, maxiter )
 	  , abstol = 1e-4
-	  , control = NULL
+	  , control = control
+	  , maxHeight = maxHeight 
 	)
+	tredats <- mapfit$tredat
+	lterms_list  <- lapply( tredats, function(tredat) cbind( tredat$lterms.1, tredat$lterms.2) )
+	dh <- abs(diff(mapfit$time)[1] )
+	
+	
 	#ne <- tredat$ne0
 	ne <- ( mapfit$ne )
 	tau0 <- mapfit$tau 
@@ -302,8 +312,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 	X0 <- cbind( time = data$time 
 	 , X0 )
 	
-	mapfit$time <- maxSampleTime  + mapfit$time
-		
+	mapfit$time <- maxSampleTime  + mapfit$time - max(mapfit$time)
 	#rtredat <- tredat[ rev(1:nrow(tredat)), ]
 	#covar.df <- data.frame( time = mapfit$time, gr0 = c( mapfit$growthrate, NA) )
 	covar.df <- data.frame( time =mapfit$time, gr0 =  mapfit$growthrate )
@@ -340,13 +349,21 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 		ll <- sum( dnorm( diff( grs ), dzxb, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
 		ll
 	}
+	
 	.of3.1 <- function(  logne ,zxb,  xbeta,  xtau = tau0)
 	{
 		fwdne = xne <- exp(logne)
 		
-		ll <-  sum(  lterms[,1] + log( 1/fwdne ) * rev( tredat$nco ) )
-		ll <- ll - sum( lterms[,2] / fwdne )
-		ll <- ll + .prior.gr0 ( xtau, xbeta, zxb, xne )
+		logprior <- .prior.gr0 ( xtau, xbeta, zxb, xne )
+		ll <- 0
+		lls <- sapply( 1:length(tredats), function(k)
+		{
+			ll <-  sum(  lterms_list[[k]][,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
+			ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
+			ll <- ll + logprior
+		})
+		ll <- .meanlogexp( lls )
+		
 		ll
 	}
 	
@@ -449,8 +466,8 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 	  , ne_ci = ne_ci  
 	  , growthrate =  growthrate
 	  , tau = tau
-	  , time = rev(-tredat$heights )
-	  , tredat = tredat
+	  , time = mapfit$time #rev(-tredat$heights )
+	  , tredat = tredats
 	  , gamma = NA
 	  , control = control
 	  , tre = tre	

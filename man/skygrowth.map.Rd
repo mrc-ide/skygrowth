@@ -15,7 +15,7 @@ skygrowth.map(tre, tau0 = 10, tau_logprior = "exponential", res = 50,
 
 \item{tau_logprior}{Prior for precision parameter (character string (gamma or exponential) or function)}
 
-\item{res}{Number of time points (integer)}
+\item{res}{Number of time intervals (integer)}
 
 \item{quiet}{Provide verbose output?}
 
@@ -24,6 +24,8 @@ skygrowth.map(tre, tau0 = 10, tau_logprior = "exponential", res = 50,
 \item{abstol}{Criterion for convergence of likelihood}
 
 \item{control}{List of options passed to optim}
+
+\item{maxHeight}{The earliest time (furthest time in to the past) to estimate Ne. If not provided, will use the median of root heights for input trees}
 
 \item{...}{Not implemented}
 }

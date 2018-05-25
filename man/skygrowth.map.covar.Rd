@@ -6,10 +6,11 @@
 \usage{
 skygrowth.map.covar(tre, formula, data, maxSampleTime, tau0 = 10,
   tau_logprior = "exponential", beta_logpriors = list(), res = 50,
-  quiet = F, maxiter = 20, abstol = 0.01, control = NULL, ...)
+  quiet = F, maxiter = 20, abstol = 0.01, control = NULL,
+  maxHeight = NULL, ...)
 }
 \arguments{
-\item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
+\item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object}
 
 \item{formula}{An R formula with empty left-hand-side; the right-hand-side specifies relationship of covariates with growth rate of Ne}
 
@@ -32,6 +33,8 @@ skygrowth.map.covar(tre, formula, data, maxSampleTime, tau0 = 10,
 \item{abstol}{Criterion for convergence of likelihood}
 
 \item{control}{List of options passed to optim}
+
+\item{maxHeight}{The earliest time (furthest time in to the past) to estimate Ne}
 
 \item{...}{Not implemented}
 }
