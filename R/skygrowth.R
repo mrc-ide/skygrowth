@@ -951,8 +951,8 @@ neplot.skygrowth.map <- function( fit, ggplot=TRUE, logy=TRUE, ... )
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time,  nemed = ne, nelb = fit$ne_ci[,1], neub = fit$ne_ci[,3] )
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = nemed) , ...) + ggplot2::geom_line()+ ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
-		pl <- pl + ggplot2::geom_ribbon( ggplot2::aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2)
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ nemed) , ...) + ggplot2::geom_line()+ ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
+		pl <- pl + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ nelb, ymax = ~ neub), fill = 'blue', alpha = .2)
 		if (logy) pl <- pl + ggplot2::scale_y_log10() 
 		return(pl)
 	} else{
@@ -972,7 +972,7 @@ growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time, gr = fit$growth)
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = gr), ... ) + ggplot2::geom_line() + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ gr), ... ) + ggplot2::geom_line() + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
 		if (logy) pl <- pl + ggplot2::scale_y_log10() 
 		return(pl)
 	} else{
@@ -995,7 +995,7 @@ R.plot.skygrowth.map <- function(fit, gamma = NA , ggplot=TRUE, ...)
 	{
 		i <- 1:(length(fit$time)-1)
 		pldf <- data.frame( t = fit$time[1:length(fit$R)],R = fit$R)
-		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = R) , ...) + ggplot2::geom_line() + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
+		ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ R) , ...) + ggplot2::geom_line() + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
 		plot( fit$time, fit$R, lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number', ...)
 		invisible(fit)	
@@ -1015,7 +1015,7 @@ neplot.skygrowth.mcmc <- function( fit, ggplot=TRUE, logy = TRUE , ... )
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time, nelb = ne[,1], nemed = ne[,2], neub = ne[,3] )
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = nemed), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = nelb, ymax = neub), fill = 'blue', alpha = .2) + ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ nemed), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ nelb, ymax = ~ neub), fill = 'blue', alpha = .2) + ggplot2::ylab('Effective population size') + ggplot2::xlab('Time before most recent sample')
 		if (logy) pl <- pl + ggplot2::scale_y_log10()
 		return(pl)
 	} else{
@@ -1036,7 +1036,7 @@ growth.plot.skygrowth.mcmc <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = med), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ med), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ lb, ymax = ~ ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
 		if (logy) pl <- pl + ggplot2::scale_y_log10()
 		return(pl) 
 	} else{
@@ -1063,7 +1063,7 @@ R.plot.skygrowth.mcmc <- function(fit, gamma = NA, ggplot=TRUE )
 		
 		
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-		ggplot2::ggplot( pldf, ggplot2::aes( x = t, y = med) ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes( ymin = lb, ymax = ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
+		ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ med) ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ lb, ymax = ~ ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Reproduction number') + ggplot2::xlab('Time before most recent sample')
 	} else{
 		plot( fit$time, x[,2], ylim=range(x[,1:3],na.rm=T),lwd =2, col = 'black', type = 'l',xlab='Time', ylab='Reproduction number')
 		
