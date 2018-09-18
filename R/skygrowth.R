@@ -38,15 +38,17 @@
 				alpha <- ( A * (A - 1)/2 )
 				lterms[i,1] <- lterms[i,1] + log(alpha) # + gamma
 				lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
+				lasth <- hh 
 			}
 			if (et == 2){ #sample
 				A <- max(1, ltt.h( hh ) )
 				alpha <- ( A * (A - 1)/2 )
 				lterms[i,1] <- lterms[i,1] + 0 # no change 
 				lterms[i,2] <- lterms[i,2] + difh * alpha # * gamma 
+				lasth <- hh 
 			}
 		}	
-		lasth <- hh 
+		
 	}
 	# NOTE lterms on forward axis
 	lterms <- lterms[ rev( 1:nrow(lterms)), ]
