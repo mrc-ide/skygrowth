@@ -487,6 +487,7 @@ with( control, {
 	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
 	dh <- abs(diff(tredat$heights)[1] )
 	
+	tau_logprior0 <- tau_logprior
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
 	mapfit <- skygrowth.map(tre
@@ -501,6 +502,7 @@ with( control, {
 	if (is.null( prop_log_tau_sd )) prop_log_tau_sd <- .2 + abs( log(mapfit$tau) ) / 5
 	#ne <- tredat$ne0
 	ne <- ( mapfit$ne )
+	tau00 <- tau0
 	tau0 <- mapfit$tau 
 #~ ne <- tredat$ne0
 	logne_proposal_sd <- median(ne) * logne_proposal_sd_factor
@@ -542,15 +544,23 @@ with( control, {
 		
 		#mh move tau
 		if (!is.null( tau_logprior )){
-		#if (FALSE){
 			if (istep > 1 & istep %% ne_steps_per_tau_step == 0){
-				proptau <- exp( log(tau) + rnorm( 1, 0, prop_log_tau_sd) )
-				lltau <- .of1.2( tau,  ne )
-				llproptau <- .of1.2( proptau,  ne )
-				if ( runif(1) < exp(llproptau - lltau) ) {
-			  		n_accept <- n_accept + 1
-					tau <- proptau
-				}
+			  if ( is.character(tau_logprior0) && tau_logprior0 == 'exponential' ){
+			    #GIBBS MOVE
+			    grs=diff ( ne ) / ( ne[-res] ) / dh
+			    xs=diff(grs)
+			    tau = rgamma(1,shape=1+length(xs)/2,rate=1/tau00+sum(xs*xs)/(2*dh))
+			    n_accept <- n_accept + 1
+			  } else {
+			    #MH MOVE
+				  proptau <- exp( log(tau) + rnorm( 1, 0, prop_log_tau_sd) )
+				  lltau <- .of1.2( tau,  ne )
+				  llproptau <- .of1.2( proptau,  ne )
+				  if ( runif(1) < exp(llproptau - lltau) ) {
+			  	  	n_accept <- n_accept + 1
+					  tau <- proptau
+				  }
+			  }
 			}
 		}
 		

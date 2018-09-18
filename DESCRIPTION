@@ -9,6 +9,7 @@ Description: This package provides methods for inferring effective population si
 License: MIT + file LICENSE
 Imports: Rcpp (>= 0.12.10), RcppArmadillo, stats, graphics, ape
 LinkingTo: Rcpp,RcppArmadillo
-Suggests: ggplot2
+Suggests: ggplot2, knitr
 RoxygenNote: 6.1.0
 Encoding: UTF-8
+VignetteBuilder: knitr

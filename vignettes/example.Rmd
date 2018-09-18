@@ -1,0 +1,73 @@
+---
+title: "Using skygrowth on a simulated tree"
+author: "Xavier Didelot"
+date: '`r Sys.Date()`'
+output:
+  pdf_document: default
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Using skygrowth on a real dataset}
+  %\usepackage[utf8]{inputenc}
+---
+
+# Initialisation
+
+In this vignette we demonstrate the usage of `skygrowth` on coalescent simulated trees.
+We need to load the packages `skygrowth` and `ape`, and we set the random seed to 0 to make the vignette reproducible. 
+
+```{r}
+library(skygrowth)
+library(ape)
+set.seed(0)
+```
+
+# Simulation
+
+Let us consider a pathogen population with effective population size times 
+generation time equal to $N_e g=10$ years.
+A sample of 100 individuals is taken from this population at a single timepoint.
+The genealogy of such a sample can be simulated as follows:
+
+
+```{r}
+tree=rcoal(100)
+tree$edge.length=tree$edge.length*10
+plot(tree, show.tip.label = F)
+axisPhylo(backward = T)
+mtext("Years since most recent sample", side=1, line=3)
+```
+
+# MAP analysis
+
+```{r}
+fit=skygrowth.map(tree,quiet=T)
+cat('Drift parameter tau: ',fit$tau)
+growth.plot(fit)
+plot(fit)
+```
+
+# MCMC analysis with Gibbs move
+
+```{r}
+fit2=skygrowth.mcmc(tree,quiet=T)
+growth.plot(fit2)
+plot(fit2)
+plot(fit2$tau,type='l',ylab='tau',xlab='Iterations')
+```
+
+# MCMC analysis with MH move
+
+```{r}
+fit3=skygrowth.mcmc(tree,quiet=T,tau_logprior = function(x) dexp(x, 0.1, log=T))
+growth.plot(fit3)
+plot(fit3)
+plot(fit3$tau,type='l',ylab='tau',xlab='Iterations')
+```
+
+# mlesky analysis
+
+```{r}
+library(mlesky)
+fit4=mlskygrid(tree)
+plot(fit4)
+```
