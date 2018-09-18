@@ -43,7 +43,7 @@ mtext("Years since most recent sample", side=1, line=3)
 fit=skygrowth.map(tree,quiet=T)
 cat('Drift parameter tau: ',fit$tau)
 growth.plot(fit)
-plot(fit)
+plot(fit,logy=F)
 ```
 
 # MCMC analysis with Gibbs move
@@ -51,7 +51,7 @@ plot(fit)
 ```{r}
 fit2=skygrowth.mcmc(tree,quiet=T)
 growth.plot(fit2)
-plot(fit2)
+plot(fit2,logy=F)
 plot(fit2$tau,type='l',ylab='tau',xlab='Iterations')
 ```
 
@@ -60,7 +60,7 @@ plot(fit2$tau,type='l',ylab='tau',xlab='Iterations')
 ```{r}
 fit3=skygrowth.mcmc(tree,quiet=T,tau_logprior = function(x) dexp(x, 0.1, log=T))
 growth.plot(fit3)
-plot(fit3)
+plot(fit3,logy=F)
 plot(fit3$tau,type='l',ylab='tau',xlab='Iterations')
 ```
 
@@ -70,4 +70,12 @@ plot(fit3$tau,type='l',ylab='tau',xlab='Iterations')
 library(mlesky)
 fit4=mlskygrid(tree)
 plot(fit4)
+```
+
+# phylodyn analysis
+
+```{r}
+library(phylodyn)
+fit5=BNPR(tree)
+plot_BNPR(fit5)
 ```
