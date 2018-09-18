@@ -69,7 +69,7 @@ plot(fit3$tau,type='l',ylab='tau',xlab='Iterations')
 ```{r}
 library(mlesky)
 fit4=mlskygrid(tree)
-plot(fit4)
+plot(fit4,logy=F)
 ```
 
 # phylodyn analysis
