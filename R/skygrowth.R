@@ -58,6 +58,48 @@
 }
 
 
+# derive timeseries of coalescent and ltt along appropriate time axis 
+.tre2df2 <- function( tre, res, maxHeight = Inf ){
+	n <- length( tre$tip )
+	D <- ape::node.depth.edgelength( tre )
+	rh <- max( D[1:n] )
+	sts <- D[1:n]
+	maxHeight <- min( rh, maxHeight )
+	
+	ne_haxis <- seq( maxHeight/res ,maxHeight, le = res )
+	shs <- rh - sts 
+	inhs <- rh - D[ (n+1):(n + tre$Nnode) ]
+	u_shs <- unique( shs ) 
+	u_inhs <- unique( inhs )
+	
+	#< h , event, ltt(descending), intervallength, nco, likterm, ne_bin >
+	tredat <- data.frame( h= c( u_shs, u_inhs, ne_haxis) 
+	 , type = c( rep('sample', length( u_shs))
+	           , rep('node', length(u_inhs))
+	           , rep('neswitch', length(ne_haxis))
+	          )
+	)
+	tredat <- tredat[ tredat$h <= maxHeight , ]
+	
+	tredat$ne_bin <- sapply( tredat$h, function(x) sum( ne_haxis  >= x ) )
+	
+	ltt.h <- function(h) sum( shs < h ) - sum( inhs < h )
+	tredat$ltt <- sapply( tredat$h, ltt.h )
+	
+	tredat$nco <- 0
+	tredat$nco[ tredat$type=='node' ] <- sapply( tredat$h[ tredat$type=='node'  ], function(x) sum( x == inhs ))
+	
+	tredat <- tredat[ order( tredat$h ), ]
+	tredat$intervalLength <- c( 0, diff( tredat$h ))
+	tredat$ltt_terms <- tredat$ltt * (tredat$ltt-1) / 2
+	
+	tredat$dh <- ne_haxis[2] -  ne_haxis[1] 
+	
+	tredat	
+}
+
+
+
 .process.tau_logprior <- function(tau_logprior, tau0){
 	if (is.character(tau_logprior)){
 		if ( tau_logprior == 'exponential' ){
@@ -147,33 +189,42 @@ skygrowth.map <- function(tre
 		median( ne, na.rm=T)
 	}))
 	
-	tredats <- lapply( tres, function(tre) .tre2df( tre, haxis  ))
-	lterms_list  <- lapply( tredats, function(tredat) cbind( tredat$lterms.1, tredat$lterms.2) )
-	
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
-	#  update to use lterms  / maybe call on c code
-	.of1.2 <- function(  logne , xtau = tau0)
-	{
+	tredats <- lapply( tres, function(tre) .tre2df2( tre, res  ))
+	
+	roughness_penalty <- function(logne, xtau){
 		fwdne <- exp(logne)
 		grs <- ( diff ( fwdne ) / ( fwdne[-res] ) / dh )
-		ll <- 0
-		lls <- sapply( 1:length(tredats), function(k)
-		{
-			ll <-  sum(  lterms_list[[k]][,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
-			ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
-			ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+		sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )
+	}
+	
+	lterms <- function(logne, tredat)
+	{
+		ne <- exp( logne )
+		sterms <- with(tredat, {
+			-intervalLength * ltt_terms / ne [ ne_bin ] 
 		})
-		ll <- .meanlogexp( lls )
+		coterms <- with(tredat, {
+			nco * ( log( ltt_terms ) - logne[ ne_bin ]  )
+		})
+		coterms[ is.na(coterms)] <- 0
+		coterms + sterms 
+	}
+	
+	.of1.2 <- function(logne, xtau = tau0){
+		rp = roughness_penalty( logne, xtau )
+		sapply( tredats, function(td){
+			sum( lterms( logne, td )) + tau_logprior( xtau ) + rp 
+		}) -> lls
+		ll<- .meanlogexp( lls  )
 		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
-	
-	.of2.2 <- function( logtau, xne =ne)
-	{
-		.of1.2( log( xne ) , xtau = exp( logtau ) )
+	.of2.2 <- function(logtau, xne = ne ){
+		.of1.2( log(xne ), xtau = exp(logtau))
 	}
-	
+		
 	ne <- rlnorm( res , log( ne0 ), .2 ) # add some jitter
 	
 	optim( par = log(ne), fn = .of1.2
@@ -352,34 +403,38 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 		ll
 	}
 	
-	.of3.1 <- function(  logne ,zxb,  xbeta,  xtau = tau0)
+	if (FALSE)
 	{
-		fwdne = xne <- exp(logne)
 		
-		logprior <- .prior.gr0 ( xtau, xbeta, zxb, xne )
-		ll <- 0
-		lls <- sapply( 1:length(tredats), function(k)
+		.of3.1 <- function(  logne ,zxb,  xbeta,  xtau = tau0)
 		{
-			ll <-  sum(  lterms_list[[k]][,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
-			ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
-			ll <- ll + logprior
-		})
-		ll <- .meanlogexp( lls )
+			fwdne = xne <- exp(logne)
+			
+			logprior <- .prior.gr0 ( xtau, xbeta, zxb, xne )
+			ll <- 0
+			lls <- sapply( 1:length(tredats), function(k)
+			{
+				ll <-  sum(  lterms_list[[k]][,1] + log( 1/fwdne ) * rev( tredats[[k]]$nco ) )
+				ll <- ll - sum(  lterms_list[[k]][,2] / fwdne )
+				ll <- ll + logprior
+			})
+			ll <- .meanlogexp( lls )
+			
+			ll
+		}
 		
-		ll
+		.of3.logtau <- function( logtau, logne ,zxb,  xbeta)
+		{
+			.of3.1( logne , zxb, xbeta, xtau = exp( logtau ) )
+		}
+		
+		.of3.beta <- function( xbeta,  xtau, logne)
+		{
+			zxb <- beta2zxb ( xbeta )
+			.of3.1(logne = logne , zxb = zxb, xbeta = xbeta, xtau = xtau )
+		}
 	}
 	
-	.of3.logtau <- function( logtau, logne ,zxb,  xbeta)
-	{
-		.of3.1( logne , zxb, xbeta, xtau = exp( logtau ) )
-	}
-	
-	.of3.beta <- function( xbeta,  xtau, logne)
-	{
-		zxb <- beta2zxb ( xbeta )
-		.of3.1(logne = logne , zxb = zxb, xbeta = xbeta, xtau = xtau )
-	}
-
 	##
 	beta2zxb <- function( beta ){
 		if ( length( betanames ) > 1 ){
@@ -388,6 +443,42 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 			zedCrossBeta <- covar.df[, betanames] * beta 
 		}
 		zedCrossBeta
+	}
+	
+	if (TRUE)
+	{
+		lterms <- function(logne, tredat)
+		{
+			ne <- exp( logne )
+			sterms <- with(tredat, {
+				-intervalLength * ltt_terms / ne [ ne_bin ] 
+			})
+			coterms <- with(tredat, {
+				nco * ( log( ltt_terms ) - logne[ ne_bin ]  )
+			})
+			coterms[ is.na(coterms)] <- 0
+			coterms + sterms 
+		}
+		
+		.of3.1 <- function(logne, zxb, xbeta, xtau = tau0){
+			logprior <- .prior.gr0 ( xtau, xbeta, zxb, xne )
+			sapply( tredats, function(td){
+				sum( lterms( logne, td )) + logprior
+			}) -> lls
+			ll<- .meanlogexp( lls  )
+			if (is.na(ll) | is.infinite(ll))  ll <- -1e12
+			ll
+		}
+		.of3.logtau <- function( logtau, logne ,zxb,  xbeta)
+		{
+			.of3.1( logne , zxb, xbeta, xtau = exp( logtau ) )
+		}
+		
+		.of3.beta <- function( xbeta,  xtau, logne)
+		{
+			zxb <- beta2zxb ( xbeta )
+			.of3.1(logne = logne , zxb = zxb, xbeta = xbeta, xtau = xtau )
+		}
 	}
 	
 	
