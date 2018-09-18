@@ -140,7 +140,7 @@ skygrowth.map <- function(tre
 	
 	optim( par = log(ne), fn = .of1.2
 	  , method = 'BFGS'
-	  , control = list( trace = 1, fnscale  = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
+	  , control = list( trace = !quiet, fnscale  = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
 	) -> fit
 	
 	trace <- matrix( NA, nrow = maxiter, ncol = 2 + res )
@@ -152,13 +152,13 @@ skygrowth.map <- function(tre
 			ne <- exp(fit$par )
 			optim( par =log(tau), fn = .of2.2
 				  , method = 'BFGS'
-			  , control = list( trace = 1, fnscale  = -1)
+			  , control = list( trace = !quiet, fnscale  = -1)
 			  , xne = ne
 			) -> fit_tau
 			tau <- exp( fit_tau$par )
 			optim( par = log(ne), fn = .of1.2
 			  , method = 'BFGS'
-			  , control = list( trace = 1, fnscale  = -1, parscale = abs(rep(median( log(ne)), length(ne)  ) ) )
+			  , control = list( trace = !quiet, fnscale  = -1, parscale = abs(rep(median( log(ne)), length(ne)  ) ) )
 			  , xtau = tau
 			) -> fit
 			trace[ iter,1] <-fit$value
@@ -167,16 +167,18 @@ skygrowth.map <- function(tre
 			if ( fit$value - lastll < abstol) break;
 			lastll <- fit$value
 			
-			cat( 'iter\n')
-			print( iter)
-			print( paste( tau, fit$value) )
+			if (!quiet) {
+			  cat( 'iter\n')
+			  print( iter)
+			  print( paste( tau, fit$value) )
+			}
 		}
 	}
 	trace <- trace[1:iter,] 
-	cat( 'Computing hessian...\n')
+	if (!quiet) cat( 'Computing hessian...\n')
 	optim( par = log(ne), fn = .of1.2
 	  , method = 'BFGS'
-	  , control = list( trace = 1, fnscale  = -1, parscale = abs(rep(median( log(ne)), length(ne)  ) ) )
+	  , control = list( trace = !quiet, fnscale  = -1, parscale = abs(rep(median( log(ne)), length(ne)  ) ) )
 	  , xtau = tau
 	  , hessian=TRUE 
 	) -> f
@@ -347,7 +349,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 	tau <- tau0
 	optim( par = log(ne), fn = .of3.1
 	  , method = 'BFGS'
-	  , control = list( trace = 1, fnscale  = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
+	  , control = list( trace = !quiet, fnscale  = -1, parscale = rep(median( abs(log(ne))), length(ne)  ) )
 	  , zxb = zxb, xbeta = beta, xtau = tau
 	) -> fit
 	
@@ -362,7 +364,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 			
 			optim( par =log(tau), fn = .of3.logtau
 				  , method = 'BFGS'
-			  , control = list( trace = 1, fnscale  = -1)
+			  , control = list( trace = !quiet, fnscale  = -1)
 			  , logne = logne ,zxb = zxb,  xbeta = beta
 			) -> fit_tau
 			tau <- exp( fit_tau$par )
@@ -370,7 +372,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 			#.of3.beta <- function( xbeta,  xtau, logne)
 			optim( par =beta, fn = .of3.beta
 				  , method = 'BFGS'
-			  , control = list( trace = 1, fnscale  = -1)
+			  , control = list( trace = !quiet, fnscale  = -1)
 			  , xtau = tau , logne = logne
 			) -> fit_beta
 			beta <- fit_beta$par
@@ -378,7 +380,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 			
 			optim( par = logne, fn = .of3.1
 			  , method = 'BFGS'
-			  , control = list( trace = 1, fnscale  = -1, parscale = rep( abs(median( logne)), length(logne)  ) )
+			  , control = list( trace = !quiet, fnscale  = -1, parscale = rep( abs(median( logne)), length(logne)  ) )
 			  , xtau = tau, zxb = zxb , xbeta = beta
 			) -> fit
 			
@@ -389,16 +391,18 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 			if ( fit$value - lastll < abstol) break;
 			lastll <- fit$value
 			
-			cat( 'iter\n')
-			print( iter)
-			print( paste( c(tau, beta, fit$value) ))
+			if (!quiet) {
+  			cat( 'iter\n')
+	  		print( iter)
+		  	print( paste( c(tau, beta, fit$value) ))
+			}
 		}
 	}
 	trace <- trace[1:iter,] 
-	cat( 'Computing hessian...\n')
+	if (!quiet) cat( 'Computing hessian...\n')
 	optim( par = logne, fn = .of3.1
 	  , method = 'BFGS'
-	  , control = list( trace = 1, fnscale  = -1, parscale = rep( abs(median( logne)), length(logne)  ) )
+	  , control = list( trace = !quiet, fnscale  = -1, parscale = rep( abs(median( logne)), length(logne)  ) )
 	  , xtau = tau, zxb = zxb , xbeta = beta
 	  , hessian = TRUE
 	) -> f
@@ -544,7 +548,7 @@ with( control, {
 				lltau <- .of1.2( tau,  ne )
 				llproptau <- .of1.2( proptau,  ne )
 				if ( runif(1) < exp(llproptau - lltau) ) {
-					n_accept <- n_accept + 1
+			  		n_accept <- n_accept + 1
 					tau <- proptau
 				}
 			}
@@ -710,7 +714,7 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
 	#proposals
 	if (is.null( prop_beta_sd )){
 		prop_beta_sd <- setNames( abs(mapfit$beta/10), betanames )
-		print( prop_beta_sd ) 
+		if (!quiet) print( prop_beta_sd ) 
 	}
 	#proposal for ne
 	mapfit_sigma <- pmax( .25*min(abs(log(mapfit$ne))), mapfit$sigma )
@@ -972,7 +976,8 @@ growth.plot.skygrowth.map <- function( fit , ggplot=TRUE, logy=FALSE, ...)
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time, gr = fit$growth)
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ gr), ... ) + ggplot2::geom_line() + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		#pldf=pldf[!is.na(pldf$gr),]
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ gr), ... ) + ggplot2::geom_line(na.rm=T) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
 		if (logy) pl <- pl + ggplot2::scale_y_log10() 
 		return(pl)
 	} else{
@@ -1036,7 +1041,7 @@ growth.plot.skygrowth.mcmc <- function( fit ,  ggplot=TRUE, logy = FALSE , ...)
 	if ( 'ggplot2' %in% installed.packages()  & ggplot)
 	{
 		pldf <- data.frame( t = fit$time, lb = x[,1], med = x[,2], ub = x[,3] )
-		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ med), ... ) + ggplot2::geom_line() + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ lb, ymax = ~ ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
+		pl <- ggplot2::ggplot( pldf, ggplot2::aes_( x = ~ t, y = ~ med), ... ) + ggplot2::geom_line(na.rm=T) + ggplot2::geom_ribbon( ggplot2::aes_( ymin = ~ lb, ymax = ~ ub), fill = 'blue', alpha = .2) + ggplot2::ylab('Growth rate') + ggplot2::xlab('Time before most recent sample')
 		if (logy) pl <- pl + ggplot2::scale_y_log10()
 		return(pl) 
 	} else{
