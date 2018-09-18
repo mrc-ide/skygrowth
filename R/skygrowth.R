@@ -354,7 +354,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 	  , maxHeight = maxHeight 
 	)
 	tredats <- mapfit$tredat
-	lterms_list  <- lapply( tredats, function(tredat) cbind( tredat$lterms.1, tredat$lterms.2) )
+	#lterms_list  <- lapply( tredats, function(tredat) cbind( tredat$lterms.1, tredat$lterms.2) )
 	dh <- abs(diff(mapfit$time)[1] )
 	
 	
@@ -623,11 +623,7 @@ skygrowth.mcmc <- function(tre
 		x[names(control)] <- control
 		control <- x
 	}
-with( control, {
-	tredat <- .tre2df( tre, res )
-	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
-	dh <- abs(diff(tredat$heights)[1] )
-	
+with( control, {	
 	tau_logprior0 <- tau_logprior
 	tau_logprior <- .process.tau_logprior( tau_logprior , tau0)
 	
@@ -641,6 +637,10 @@ with( control, {
 	  , control = NULL
 	)
 	if (is.null( prop_log_tau_sd )) prop_log_tau_sd <- .2 + abs( log(mapfit$tau) ) / 5
+	
+	tredats <- mapfit$tredat
+	dh <- abs(diff(mapfit$time)[1] )
+	
 	#ne <- tredat$ne0
 	ne <- ( mapfit$ne )
 	tau00 <- tau0
@@ -659,18 +659,37 @@ with( control, {
 	GROWTHRATE <- matrix( NA, nrow = datadim, ncol = res-1 )
 	
 	
-	.of1.2 <- function(  xtau , ne)
+	roughness_penalty <- function(logne, xtau){
+		fwdne <- exp(logne)
+		grs <- ( diff ( fwdne ) / ( fwdne[-res] ) / dh )
+		sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )
+	}
+	
+	lterms <- function(logne, tredat)
 	{
-		fwdlogne <- log( ne )
-		
-		ll <-  sum(  lterms[,1] + log( 1/ne ) * rev( tredat$nco ) )
-		ll <- ll - sum( lterms[,2] / ne )
-		
-		#grs <- diff ( fwdlogne ) / ( fwdlogne[-res] ) / dh #
-		grs <- diff ( ne ) / ( ne[-res] ) / dh #
-		ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+		ne <- exp( logne )
+		sterms <- with(tredat, {
+			-intervalLength * ltt_terms / ne [ ne_bin ] 
+		})
+		coterms <- with(tredat, {
+			nco * ( log( ltt_terms ) - logne[ ne_bin ]  )
+		})
+		coterms[ is.na(coterms)] <- 0
+		coterms + sterms 
+	}
+	
+	.of1.0 <- function(logne, xtau = tau0){
+		rp = roughness_penalty( logne, xtau )
+		sapply( tredats, function(td){
+			sum( lterms( logne, td )) + tau_logprior( xtau ) + rp 
+		}) -> lls
+		ll<- .meanlogexp( lls  )
+		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
+	.of1.2 <- function(xtau, xne = ne ){
+		.of1.0( log(xne ), xtau )
+	}		
 
 	
 	beta.logprior <- function ( beta ) 0
@@ -835,8 +854,7 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
 	gr0 <- mapfit$growthrate
 	tau0 <- mapfit$tau
 	
-	tredat <- mapfit$tredat
-	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
+	tredats <- mapfit$tredat
 	X0 <- as.data.frame( model.matrix(  formula , data ) )
 	betanames <- colnames( X0 )[-1]
 	X0 <- cbind( time = data$time 
@@ -901,32 +919,52 @@ with( control, {
 	GROWTHRATE <- matrix( NA, nrow = datadim, ncol = res-1 )
 	
 	# 
-	.prior.gr0 <- function ( xtau, xbeta, zxb, xne){
-		# fix endpoints 
-		dzxb <- diff( zxb )
-		grs <- ( diff ( xne ) / ( xne[-res] ) / dh )
-		dzxb <- dzxb[1:(length( grs)-1)]
-		dzxb[is.na(dzxb)] <- 0
-		ll <- sum( dnorm( diff( grs ), dzxb, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
-		ll
-	}
-	.of3.1 <- function( xtau, xbeta, zxb, fwdne)
+			roughness_penalty <- function ( xtau, xbeta, zxb, xne){
+				# fix endpoints 
+				dzxb <- diff( zxb )
+				grs <- ( diff ( xne ) / ( xne[-res] ) / dh )
+				dzxb <- dzxb[1:(length( grs)-1)]
+				dzxb[is.na(dzxb)] <- 0
+				ll <- sum( dnorm( diff( grs ), dzxb, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+				ll
+			}
+
+			
+			beta2zxb <- function( beta ){
+				# note tredat in rev order 
+				if ( length( betanames ) > 1 ){
+					zedCrossBeta <- as.vector( as.matrix(tredat[, betanames]) %*% beta )
+				} else{
+					zedCrossBeta <- tredat[, betanames] * beta 
+				}
+				rev( zedCrossBeta )
+			}
+	
+	
+	lterms <- function(logne, tredat)
 	{
-		ll <-  sum(  lterms[,1] + log( 1/fwdne ) * rev( tredat$nco ) )
-		ll <- ll - sum( lterms[,2] / fwdne )
-		ll <- ll + .prior.gr0 ( xtau, xbeta, zxb, fwdne )
+		ne <- exp( logne )
+		sterms <- with(tredat, {
+			-intervalLength * ltt_terms / ne [ ne_bin ] 
+		})
+		coterms <- with(tredat, {
+			nco * ( log( ltt_terms ) - logne[ ne_bin ]  )
+		})
+		coterms[ is.na(coterms)] <- 0
+		coterms + sterms 
+	}
+	
+	.of3.1 <- function( xtau, xbeta, zxb, fwdne){
+		logne <- log( fwdne )
+		rp = roughness_penalty( xtau, xbeta, zxb, fwdne )
+		sapply( tredats, function(td){
+			sum( lterms( logne, td )) + tau_logprior( xtau ) + rp 
+		}) -> lls
+		ll<- .meanlogexp( lls  )
+		if (is.na(ll) | is.infinite(ll))  ll <- -1e12
 		ll
 	}
 	
-	beta2zxb <- function( beta ){
-		# note tredat in rev order 
-		if ( length( betanames ) > 1 ){
-			zedCrossBeta <- as.vector( as.matrix(tredat[, betanames]) %*% beta )
-		} else{
-			zedCrossBeta <- tredat[, betanames] * beta 
-		}
-		rev( zedCrossBeta )
-	}
 	
 	tau <- tau0
 	beta <- beta0
