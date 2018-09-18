@@ -5,8 +5,8 @@
 \title{A gibbs-metropolis algorithm for sampling Ne(t) with a non-parametric growth model}
 \usage{
 skygrowth.mcmc(tre, mhsteps = 1e+05, tau0 = 10,
-  tau_logprior = "exponential", res = 50, quiet = F, control = NULL,
-  ...)
+  tau_logprior = "exponential", res = 50, quiet = F,
+  control = NULL, ...)
 }
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
