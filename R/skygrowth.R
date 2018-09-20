@@ -1,19 +1,20 @@
 #' derive timeseries of coalescent and ltt along appropriate time axis 
 #' @param haxis vector retrospective time axis increasing order 
-.tre2df <- function( tre, haxis){
-	res <- length(haxis)
-	n <- length( tre$tip )
+.tre2df <- function( tre, res){
+	n <- Ntip( tre )
 	D <- node.depth.edgelength( tre )
 	rh <- max( D[1:n] )
 	sts <- D[1:n]
+		haxis <- seq(0, rh, length.out = res + 1)
+#~ 	haxis <- seq(0, rh, length.out = res)
 	
 	shs <- max(sts) - sts
 	
 	inhs <- max(sts) - D[ (n+1):(n + tre$Nnode) ]
 	
 	ltt.h <- function(h) sum( shs < h ) - sum( inhs < h )
-	nco <- sapply( 2:res, function(i) sum( ( inhs >  haxis[i-1] ) & ( inhs <= haxis[i] ) ) )
-	ltt <- sapply( 2:res, function(i) sqrt( ltt.h( haxis[i-1] ) * ltt.h( haxis[i] )) )
+	nco <- sapply( 2:(res+1), function(i) sum( ( inhs >  haxis[i-1] ) & ( inhs <= haxis[i] ) ) )
+	ltt <- sapply( 2:(res+1), function(i) sqrt( ltt.h( haxis[i-1] ) * ltt.h( haxis[i] )) )
 		
 	# derive terms for coalescent likelihood 
 	#alpha = {A choose 2} ; gamma = 1/ Ne
@@ -52,7 +53,6 @@
 	}
 	# NOTE lterms on forward axis
 	lterms <- lterms[ rev( 1:nrow(lterms)), ]
-	
 	# NOTE not counting most recent sample 
 	data.frame( heights = haxis[-1],  nco = nco , ltt = ltt, lterms = lterms)
 }
@@ -463,7 +463,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 		}
 		
 		.of3.1 <- function(logne, zxb, xbeta, xtau = tau0){
-			logprior <- .prior.gr0 ( xtau, xbeta, zxb, xne )
+			logprior <- .prior.gr0 ( xtau, xbeta, zxb, exp(logne) )
 			sapply( tredats, function(td){
 				sum( lterms( logne, td )) + logprior
 			}) -> lls
@@ -645,7 +645,6 @@ with( control, {
 	ne <- ( mapfit$ne )
 	tau00 <- tau0
 	tau0 <- mapfit$tau 
-#~ ne <- tredat$ne0
 	logne_proposal_sd <- median(ne) * logne_proposal_sd_factor
 	
 	# output to save
@@ -835,8 +834,10 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
 	gr0 <- mapfit$growthrate
 	tau0 <- mapfit$tau
 	
-	tredat <- mapfit$tredat
+	tredat <- .tre2df( tre, res )
 	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
+	dh <- abs(diff(tredat$heights)[1] )
+	
 	X0 <- as.data.frame( model.matrix(  formula , data ) )
 	betanames <- colnames( X0 )[-1]
 	X0 <- cbind( time = data$time 
@@ -998,6 +999,7 @@ with( control, {
 	## compute quantiles
 	ne_ci <- t( sapply(1:ncol( NE ), function(i) quantile( NE[, i], prob = c( .025 , .5, .975 ), na.rm=T) ) )
 	growthrate_ci <- t( sapply(1:ncol( GROWTHRATE ), function(i) quantile( GROWTHRATE[, i], prob = c( .025 , .5, .975 ), na.rm=T) ) )
+	
 	rv <- list( ne = NE
 	  , growthrate = GROWTHRATE
 	  , ne_ci = ne_ci
