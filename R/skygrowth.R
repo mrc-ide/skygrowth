@@ -237,7 +237,7 @@ skygrowth.map <- function(tre
 	tau <- tau0
 	lastll <- -Inf
 	{
-		for (iter in 1:maxiter){
+		if (maxiter>0) for (iter in 1:maxiter){
 			ne <- exp(fit$par )
 			optim( par =log(tau), fn = .of2.2
 				  , method = 'BFGS'
@@ -263,7 +263,7 @@ skygrowth.map <- function(tre
 			}
 		}
 	}
-	trace <- trace[1:iter,] 
+	if (maxiter>0) trace <- trace[1:iter,] 
 	if (!quiet) cat( 'Computing hessian...\n')
 	optim( par = log(ne), fn = .of1.2
 	  , method = 'BFGS'
