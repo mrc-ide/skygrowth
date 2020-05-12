@@ -4,9 +4,18 @@
 \alias{skygrowth.map}
 \title{Maximum a posteriori estimate of effective size through time with a non-parametric growth model}
 \usage{
-skygrowth.map(tre, tau0 = 10, tau_logprior = "exponential", res = 50,
-  quiet = FALSE, maxiter = 20, abstol = 0.01, control = NULL,
-  maxHeight = NULL, ...)
+skygrowth.map(
+  tre,
+  tau0 = 10,
+  tau_logprior = "exponential",
+  res = 50,
+  quiet = FALSE,
+  maxiter = 20,
+  abstol = 0.01,
+  control = NULL,
+  maxHeight = NULL,
+  ...
+)
 }
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object}
@@ -36,7 +45,7 @@ A fitted model including effective size through time
 Maximum a posteriori estimate of effective size through time with a non-parametric growth model
 }
 \examples{
-\\doNotRun{
+\dontrun{
 require(skygrowth)
 require(ape)
 load( system.file( package='skygrowth', 'NY_flu.rda' , mustWork=TRUE) ) 

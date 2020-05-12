@@ -47,6 +47,31 @@ double rbm_loglik1_2( arma::vec ne, double tau,  double dh ) {
 	return ll; 
 }
 
+// includes R prior 
+double rbm_loglik1_3( arma::vec ne, double tau,  double dh, double logRmean, double logRsd, double gamma1 ) {
+	arma::vec diffne = arma::diff ( ne )  ;
+	arma::vec grs = (diffne / ne.head( diffne.size() ) )/dh; 
+	arma::vec diffgrs = arma::diff( grs ); 
+	double xsd = sqrt( dh / tau ); 
+	double ll = 0.; 
+	for (int i = 0; i < diffgrs.size(); i++){
+		ll += R::dnorm( diffgrs(i), 0., xsd, 1 );
+	}
+	
+	arma::vec Rt = grs * (1/gamma1) + 1;
+	for (int i = 0; i < Rt.size(); i++){
+		if ( Rt(i) <= 0 ){
+			ll = R_NegInf;
+		} else{
+			ll += R::dnorm( log(Rt(i)), logRmean, logRsd, 1 );
+		}
+	}
+	
+	return ll; 
+}
+
+
+
 // includes covars 
 double rbm_loglik2_2( arma::vec ne, double tau, double dh, arma::vec diff_zxb  ){
 	arma::vec diffne = arma::diff ( ne )  ;
@@ -57,6 +82,30 @@ double rbm_loglik2_2( arma::vec ne, double tau, double dh, arma::vec diff_zxb  )
 	for (int i = 0; i < diffgrs.size(); i++){
 		ll += R::dnorm( diffgrs(i), diff_zxb(i), xsd, 1 ); 
 	}
+	return ll;
+}
+
+// includes R prior & covars 
+double rbm_loglik2_3( arma::vec ne, double tau, double dh, arma::vec diff_zxb, double logRmean, double logRsd, double gamma1 ){
+	arma::vec diffne = arma::diff ( ne )  ;
+	arma::vec grs = (diffne / ne.head( diffne.size() ) ) / dh ; //
+	arma::vec diffgrs = arma::diff( grs ) ; 
+	
+	double xsd = sqrt( dh / tau ); 
+	double ll = 0.; 
+	for (int i = 0; i < diffgrs.size(); i++){
+		ll += R::dnorm( diffgrs(i), diff_zxb(i), xsd, 1 ); 
+	}
+	
+	arma::vec Rt = grs * (1/gamma1) + 1;
+	for (int i = 0; i < Rt.size(); i++){
+		if ( Rt(i) <= 0 ){
+			ll = R_NegInf;
+		} else{
+			ll += R::dnorm( log(Rt(i)), logRmean, logRsd, 1 );
+		}
+	}
+	
 	return ll;
 }
 
@@ -97,6 +146,33 @@ arma::vec mh_sample_ne1_2( arma::vec fwdnevec, arma::vec fwdnco , double tau , a
 	return exp(logne) ;
 }
 
+
+//~ mh_sample_ne1_2( ( ne) , rev( tredat$nco ),  tau, mapfit$sigma, dh, lterms) 
+// includes R prior 
+//[[Rcpp::export()]]
+arma::vec mh_sample_ne1_3( arma::vec fwdnevec, arma::vec fwdnco , double tau , arma::vec prop_sigma, double dh, arma::mat lterms, double logRmean, double logRsd, double gamma1){
+	arma::vec logne = log ( fwdnevec ) ;
+	double ll = rbm_loglik1_3( fwdnevec, tau, dh, logRmean, logRsd, gamma1 ) + co_loglik2( fwdnevec, fwdnco, dh, lterms ) ;
+	double propll;
+	arma::vec proplogne = log( fwdnevec ); 
+	for (int i = 0; i < logne.size() ; i++){
+		//~ proplogne = logne; 
+		proplogne(i) =  Rf_rnorm(  logne(i), prop_sigma(i) ) ; 
+		propll = rbm_loglik1_3( exp(proplogne), tau, dh , logRmean, logRsd, gamma1)      +       co_loglik2( exp(proplogne), fwdnco, dh, lterms ) ;
+		
+		if ( Rf_runif(0.,1.) < exp( propll - ll)){
+			logne(i) = proplogne(i); 
+			ll = propll; 
+		} else {
+			proplogne(i) = logne(i) ;
+		}
+	}
+	return exp(logne) ;
+}
+
+
+
+
 // uses covars: 
 //[[Rcpp::export()]]
 arma::vec mh_sample_ne2_2( arma::vec fwdnevec, arma::vec fwdnco , double tau , arma::vec prop_sigma, double dh, arma::vec zxb, arma::mat lterms ){
@@ -117,6 +193,37 @@ arma::vec mh_sample_ne2_2( arma::vec fwdnevec, arma::vec fwdnco , double tau , a
 		//~ proplogne = logne; 
 		proplogne(i) =  Rf_rnorm(  logne(i), prop_sigma(i)  ) ; 
 		propll = rbm_loglik2_2( exp( proplogne ), tau, dh, dzxb ) + co_loglik2( exp(proplogne), fwdnco, dh, lterms ) ;
+		
+		if ( Rf_runif(0.,1.) < exp( propll - ll)){
+			logne(i) = proplogne(i); 
+			ll = propll; 
+		} else {
+			proplogne(i) = logne(i) ;
+		}
+	}
+	
+	return exp(logne) ;
+}
+
+// uses R prior AND covars: 
+//[[Rcpp::export()]]
+arma::vec mh_sample_ne2_3( arma::vec fwdnevec, arma::vec fwdnco , double tau , arma::vec prop_sigma, double dh, arma::vec zxb, arma::mat lterms,  double logRmean, double logRsd, double gamma1 ){
+	// mean diference predicted by covariates: 	
+	arma::vec dzxb = arma::diff( zxb ); 
+	for (int i = 0; i < dzxb.size(); i++){
+		if ( NumericVector::is_na(dzxb(i))){
+			dzxb(i) = 0.; 
+		}
+	}
+	
+	arma::vec logne = log ( fwdnevec ) ;
+	double ll = rbm_loglik2_3( fwdnevec, tau, dh, dzxb, logRmean, logRsd, gamma1 ) + co_loglik2( fwdnevec, fwdnco, dh, lterms ) ;
+	double propll;
+	arma::vec proplogne = log( fwdnevec ); 
+	for (int i = 0 ; i < logne.size() ; i++){
+		//~ proplogne = logne; 
+		proplogne(i) =  Rf_rnorm(  logne(i), prop_sigma(i)  ) ; 
+		propll = rbm_loglik2_3( exp( proplogne ), tau, dh, dzxb, logRmean, logRsd, gamma1 ) + co_loglik2( exp(proplogne), fwdnco, dh, lterms ) ;
 		
 		if ( Rf_runif(0.,1.) < exp( propll - ll)){
 			logne(i) = proplogne(i); 

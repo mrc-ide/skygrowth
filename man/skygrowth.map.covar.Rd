@@ -4,10 +4,22 @@
 \alias{skygrowth.map.covar}
 \title{Maximum a posteriori estimate of effective size through time using covariate data}
 \usage{
-skygrowth.map.covar(tre, formula, data, maxSampleTime, tau0 = 10,
-  tau_logprior = "exponential", beta_logpriors = list(), res = 50,
-  quiet = F, maxiter = 20, abstol = 0.01, control = NULL,
-  maxHeight = NULL, ...)
+skygrowth.map.covar(
+  tre,
+  formula,
+  data,
+  maxSampleTime,
+  tau0 = 10,
+  tau_logprior = "exponential",
+  beta_logpriors = list(),
+  res = 50,
+  quiet = FALSE,
+  maxiter = 20,
+  abstol = 0.01,
+  control = NULL,
+  maxHeight = NULL,
+  ...
+)
 }
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape) or a list of phylogenies or multi.phylo object}

@@ -22,6 +22,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mh_sample_ne1_3
+arma::vec mh_sample_ne1_3(arma::vec fwdnevec, arma::vec fwdnco, double tau, arma::vec prop_sigma, double dh, arma::mat lterms, double logRmean, double logRsd, double gamma1);
+RcppExport SEXP _skygrowth_mh_sample_ne1_3(SEXP fwdnevecSEXP, SEXP fwdncoSEXP, SEXP tauSEXP, SEXP prop_sigmaSEXP, SEXP dhSEXP, SEXP ltermsSEXP, SEXP logRmeanSEXP, SEXP logRsdSEXP, SEXP gamma1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type fwdnevec(fwdnevecSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type fwdnco(fwdncoSEXP);
+    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type prop_sigma(prop_sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type dh(dhSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lterms(ltermsSEXP);
+    Rcpp::traits::input_parameter< double >::type logRmean(logRmeanSEXP);
+    Rcpp::traits::input_parameter< double >::type logRsd(logRsdSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma1(gamma1SEXP);
+    rcpp_result_gen = Rcpp::wrap(mh_sample_ne1_3(fwdnevec, fwdnco, tau, prop_sigma, dh, lterms, logRmean, logRsd, gamma1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mh_sample_ne2_2
 arma::vec mh_sample_ne2_2(arma::vec fwdnevec, arma::vec fwdnco, double tau, arma::vec prop_sigma, double dh, arma::vec zxb, arma::mat lterms);
 RcppExport SEXP _skygrowth_mh_sample_ne2_2(SEXP fwdnevecSEXP, SEXP fwdncoSEXP, SEXP tauSEXP, SEXP prop_sigmaSEXP, SEXP dhSEXP, SEXP zxbSEXP, SEXP ltermsSEXP) {
@@ -39,10 +58,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mh_sample_ne2_3
+arma::vec mh_sample_ne2_3(arma::vec fwdnevec, arma::vec fwdnco, double tau, arma::vec prop_sigma, double dh, arma::vec zxb, arma::mat lterms, double logRmean, double logRsd, double gamma1);
+RcppExport SEXP _skygrowth_mh_sample_ne2_3(SEXP fwdnevecSEXP, SEXP fwdncoSEXP, SEXP tauSEXP, SEXP prop_sigmaSEXP, SEXP dhSEXP, SEXP zxbSEXP, SEXP ltermsSEXP, SEXP logRmeanSEXP, SEXP logRsdSEXP, SEXP gamma1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type fwdnevec(fwdnevecSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type fwdnco(fwdncoSEXP);
+    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type prop_sigma(prop_sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type dh(dhSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type zxb(zxbSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lterms(ltermsSEXP);
+    Rcpp::traits::input_parameter< double >::type logRmean(logRmeanSEXP);
+    Rcpp::traits::input_parameter< double >::type logRsd(logRsdSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma1(gamma1SEXP);
+    rcpp_result_gen = Rcpp::wrap(mh_sample_ne2_3(fwdnevec, fwdnco, tau, prop_sigma, dh, zxb, lterms, logRmean, logRsd, gamma1));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_skygrowth_mh_sample_ne1_2", (DL_FUNC) &_skygrowth_mh_sample_ne1_2, 6},
+    {"_skygrowth_mh_sample_ne1_3", (DL_FUNC) &_skygrowth_mh_sample_ne1_3, 9},
     {"_skygrowth_mh_sample_ne2_2", (DL_FUNC) &_skygrowth_mh_sample_ne2_2, 7},
+    {"_skygrowth_mh_sample_ne2_3", (DL_FUNC) &_skygrowth_mh_sample_ne2_3, 10},
     {NULL, NULL, 0}
 };
 

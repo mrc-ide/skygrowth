@@ -4,10 +4,24 @@
 \alias{skygrowth.mcmc.covar}
 \title{A gibbs-metropolis algorithm for sampling Ne(t) with a 1st order moving average model and using covariate data}
 \usage{
-skygrowth.mcmc.covar(tre, formula, data, maxSampleTime, iter = 1e+05,
-  iter0 = 10, tau0 = 10, tau_logprior = "exponential", res = 50,
-  beta_logpriors = list(), prop_beta_sd = NULL, quiet = F,
-  control = NULL, ...)
+skygrowth.mcmc.covar(
+  tre,
+  formula,
+  data,
+  maxSampleTime,
+  iter = 1e+05,
+  iter0 = 10,
+  tau0 = 10,
+  tau_logprior = "exponential",
+  res = 50,
+  beta_logpriors = list(),
+  prop_beta_sd = NULL,
+  quiet = FALSE,
+  control = NULL,
+  gamma = NA,
+  logRmean = NULL,
+  logRsd = 1
+)
 }
 \arguments{
 \item{tre}{A dated phylogeny in ape::phylo format (see documentation for ape)}
@@ -36,7 +50,13 @@ skygrowth.mcmc.covar(tre, formula, data, maxSampleTime, iter = 1e+05,
 
 \item{control}{List of options passed to optim}
 
-\item{...}{Not implemented}
+\item{gamma}{Death rate. If provided will compute R}
+
+\item{logRmean}{Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided}
+
+\item{logRsd}{SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided}
+
+\item{mhsteps}{Number of mcmc steps}
 }
 \value{
 A fitted model including effective size through time

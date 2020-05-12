@@ -139,7 +139,7 @@
 #' @return A fitted model including effective size through time
 #' @export
 #' @examples
-#' \doNotRun{
+#' \dontrun{
 #' require(skygrowth)
 #' require(ape)
 #' load( system.file( package='skygrowth', 'NY_flu.rda' , mustWork=TRUE) ) 
@@ -333,7 +333,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
   , tau_logprior = 'exponential'
   , beta_logpriors = list()
   , res = 50 
-  , quiet = F
+  , quiet = FALSE
   , maxiter = 20
   , abstol = 1e-2
   , control = NULL
@@ -602,9 +602,10 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
 #' @param res Number of time points (integer)
 #' @param quiet Provide verbose output? 
-# @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
-#' @param ... Not implemented
+#' @param gamma Death rate. If provided will compute R 
+#' @param logRmean Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
+#' @param logRsd SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
 #' @return A fitted model including effective size through time
 #' @export
 skygrowth.mcmc <- function(tre
@@ -614,7 +615,11 @@ skygrowth.mcmc <- function(tre
   , res = 50
   , quiet = F
   , control = NULL
-  , ... #not implemented
+  
+  , gamma = NA 
+  , logRmean = NULL
+  , logRsd = 1
+  
 ){
 	if( is.null( control)) {
 			control <- .default_mcmc_control
@@ -670,7 +675,23 @@ with( control, {
 		ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
 		ll
 	}
-
+	# uses R prior : 
+	.of1.3 <- function(  xtau , ne)
+	{
+		fwdlogne <- log( ne )
+		
+		ll <-  sum(  lterms[,1] + log( 1/ne ) * rev( tredat$nco ) )
+		ll <- ll - sum( lterms[,2] / ne )
+		
+		#grs <- diff ( fwdlogne ) / ( fwdlogne[-res] ) / dh #
+		grs <- diff ( ne ) / ( ne[-res] ) / dh #
+		Rt = grs * (1/gamma) + 1
+		ll <- ll + sum( dnorm( diff( grs ), 0, sqrt( dh / xtau ) , log = TRUE) )  + tau_logprior( xtau )
+		ll <- ll + sum( dlnorm( Rt, logRmean, logRsd , log = TRUE ) )
+		ll
+	}
+	
+	use_Rprior =  (!is.null( logRmean) & !is.null(gamma) & !is.na( logRsd ))
 	
 	beta.logprior <- function ( beta ) 0
 	
@@ -678,9 +699,15 @@ with( control, {
 	n_accept <- 0
 	for (istep in 1:mhsteps) {
 		#gibbs ne
-		ne <- (as.vector( 
-		  mh_sample_ne1_2( ( ne) , rev( tredat$nco ),  tau, mapfit$sigma, dh, lterms) 
-		 ))
+		if (!use_Rprior){
+			ne <- (as.vector( 
+			  mh_sample_ne1_2( ( ne) , rev( tredat$nco ),  tau, mapfit$sigma, dh, lterms) 
+			 ))
+		} else{
+			ne <- (as.vector( 
+			  mh_sample_ne1_3( ( ne) , rev( tredat$nco ),  tau, mapfit$sigma, dh, lterms, logRmean, logRsd, gamma) 
+			 ))
+		}
 		
 		#mh move tau
 		if (!is.null( tau_logprior )){
@@ -694,8 +721,13 @@ with( control, {
 			  } else {
 			    #MH MOVE
 				  proptau <- exp( log(tau) + rnorm( 1, 0, prop_log_tau_sd) )
-				  lltau <- .of1.2( tau,  ne )
-				  llproptau <- .of1.2( proptau,  ne )
+				  if (!use_Rprior){
+					lltau <- .of1.2( tau,  ne )
+					llproptau <- .of1.2( proptau,  ne )
+				  } else{
+					lltau <- .of1.3( tau,  ne )
+					llproptau <- .of1.3( proptau,  ne )  
+				  }
 				  if ( runif(1) < exp(llproptau - lltau) ) {
 			  	  	n_accept <- n_accept + 1
 					  tau <- proptau
@@ -741,6 +773,7 @@ with( control, {
 	  , tre = tre
 	  , tau_logprior = tau_logprior 
 	  , mapfit = mapfit 
+	  , Rt = {  if (is.na(gamma)) NA else growthrate_ci*(1/gamma)+1 }
 	)
 	
 	class(rv) <- 'skygrowth.mcmc'
@@ -786,16 +819,17 @@ continue.skygrowth.mcmc <- function( fit
 #' @param maxSampleTime The scalar time that the most recent sample was collected
 #' @param iter iter
 #' @param iter0 iter0
-# @param mhsteps Number of mcmc steps
+#' @param mhsteps Number of mcmc steps
 #' @param tau0 Initial guess of the precision parameter
 #' @param tau_logprior Prior for precision parameter (character string (gamma or exponential) or function)
 #' @param res Number of time points (integer)
 #' @param beta_logpriors Optional list of functions providing log density for coefficients (must correspond to data)
 #' @param prop_beta_sd Standard deviation of beta proposal kernel
 #' @param quiet Provide verbose output? 
-# @param abstol Criterion for convergence of likelihood
 #' @param control List of options passed to optim
-#' @param ... Not implemented
+#' @param gamma Death rate. If provided will compute R 
+#' @param logRmean Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
+#' @param logRsd SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
 #' @return A fitted model including effective size through time
 #' @export
 skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
@@ -809,9 +843,11 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
   , res = 50
   , beta_logpriors = list()
   , prop_beta_sd = NULL
-  , quiet = F
+  , quiet = FALSE
   , control = NULL
-  , ... #not implemented
+  , gamma = NA 
+  , logRmean = NULL
+  , logRsd = 1
 ){
 	if (!('time' %in% colnames(data))) stop('covariate data must include *time* of observation' )
 	# initial fit for guess of ne growth 
@@ -918,6 +954,21 @@ with( control, {
 		ll <- ll + .prior.gr0 ( xtau, xbeta, zxb, fwdne )
 		ll
 	}
+	# uses R prior 
+	.of3.2 <- function( xtau, xbeta, zxb, fwdne)
+	{
+		ll <-  sum(  lterms[,1] + log( 1/fwdne ) * rev( tredat$nco ) )
+		ll <- ll - sum( lterms[,2] / fwdne )
+		ll <- ll + .prior.gr0 ( xtau, xbeta, zxb, fwdne )
+		
+		grs <- diff ( fwdne ) / ( fwdne[-res] ) / dh #
+		Rt = grs * (1/gamma) + 1
+		ll <- ll + sum( dlnorm( Rt, logRmean, logRsd , log = TRUE ) )
+		
+		ll
+	}	
+	use_Rprior =  (!is.null( logRmean) & !is.null(gamma) & !is.na( logRsd ))
+
 	
 	beta2zxb <- function( beta ){
 		# note tredat in rev order 
@@ -936,16 +987,28 @@ with( control, {
 	for (istep in 1:iter) {
 		zxb <- beta2zxb( beta )
 		#gibbs ne
-		ne <- (as.vector( 
-		  mh_sample_ne2_2( ne , rev( tredat$nco ) , tau ,  mapfit_sigma , dh, zxb , lterms ) 
-		))
+		if ( !use_Rprior ){
+			ne <- (as.vector( 
+			  mh_sample_ne2_2( ne , rev( tredat$nco ) , tau ,  mapfit_sigma , dh, zxb , lterms ) 
+			))
+		} else{
+			ne <- (as.vector( 
+			  mh_sample_ne2_3( ne , rev( tredat$nco ) , tau ,  mapfit_sigma , dh, zxb , lterms , logRmean, logRsd, gamma) 
+			))
+		}
 		
 		#mh move tau
 		if (!is.null( tau_logprior )){
 			if (istep > 1 & istep %% ne_steps_per_tau_step == 0){
 				proptau <- exp( log(tau) + rnorm( 1, 0, prop_log_tau_sd) )
-				lltau <- .of3.1(tau, beta, zxb, ne )
-				llproptau <- .of3.1(proptau, beta, zxb, ne )
+				if ( !use_Rprior){
+					lltau <- .of3.1(tau, beta, zxb, ne )
+					llproptau <- .of3.1(proptau, beta, zxb, ne )
+				}else{
+					lltau <- .of3.2(tau, beta, zxb, ne )
+					llproptau <- .of3.2(proptau, beta, zxb, ne )
+				}
+				
 				if ( runif(1) < exp(llproptau - lltau) ) {
 					n_accept <- n_accept + 1
 					tau <- proptau
@@ -956,13 +1019,19 @@ with( control, {
 		
 		# mh move beta's 
 		if (istep > 1 & istep %% ne_steps_per_tau_step == 0) {
-			ll <- .of3.1(tau, beta,  zxb, ne )
+			if (!use_Rprior )
+				ll <- .of3.1(tau, beta,  zxb, ne )
+			else 
+				ll <- .of3.2(tau, beta,  zxb, ne )
 			for (k in 1:length(betanames)){
 				x <- rnorm( 1, beta[k], prop_beta_sd[k])
 				propbeta <- beta
 				propbeta[k] <- unname( x )
 				.zxb <- beta2zxb( propbeta )
-				.ll <- .of3.1( tau, propbeta , .zxb, ne )
+				if ( !use_Rprior)
+					.ll <- .of3.1( tau, propbeta , .zxb, ne )
+				else 
+					.ll <- .of3.2( tau, propbeta , .zxb, ne )
 				
 				if ( runif(1) < exp(.ll - ll) ) {
 					n_accept <- n_accept + 1
@@ -1015,6 +1084,7 @@ with( control, {
 	  , tau_logprior = tau_logprior 
 	  , mapfit = mapfit 
 	  , logpo = LOGPO
+	  , Rt = {  if (is.na(gamma)) NA else growthrate_ci*(1/gamma)+1 }
 	)
 	
 	class(rv) <- c('skygrowth.mcmc.covar', 'skygrowth.mcmc')

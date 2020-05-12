@@ -5,7 +5,15 @@ mh_sample_ne1_2 <- function(fwdnevec, fwdnco, tau, prop_sigma, dh, lterms) {
     .Call('_skygrowth_mh_sample_ne1_2', PACKAGE = 'skygrowth', fwdnevec, fwdnco, tau, prop_sigma, dh, lterms)
 }
 
+mh_sample_ne1_3 <- function(fwdnevec, fwdnco, tau, prop_sigma, dh, lterms, logRmean, logRsd, gamma1) {
+    .Call('_skygrowth_mh_sample_ne1_3', PACKAGE = 'skygrowth', fwdnevec, fwdnco, tau, prop_sigma, dh, lterms, logRmean, logRsd, gamma1)
+}
+
 mh_sample_ne2_2 <- function(fwdnevec, fwdnco, tau, prop_sigma, dh, zxb, lterms) {
     .Call('_skygrowth_mh_sample_ne2_2', PACKAGE = 'skygrowth', fwdnevec, fwdnco, tau, prop_sigma, dh, zxb, lterms)
+}
+
+mh_sample_ne2_3 <- function(fwdnevec, fwdnco, tau, prop_sigma, dh, zxb, lterms, logRmean, logRsd, gamma1) {
+    .Call('_skygrowth_mh_sample_ne2_3', PACKAGE = 'skygrowth', fwdnevec, fwdnco, tau, prop_sigma, dh, zxb, lterms, logRmean, logRsd, gamma1)
 }
 
