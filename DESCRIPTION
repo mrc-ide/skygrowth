@@ -1,8 +1,8 @@
 Package: skygrowth
 Type: Package
 Title: Phylodynamic inference with nonparametric growth rate models
-Version: 0.3.0
-Date: 2020-05-12
+Version: 0.3.1
+Date: 2020-05-15
 Author: Erik M Volz and Xavier Didelot
 Maintainer: Erik M Volz <erik.volz@gmail.com>
 Description: This package provides methods for inferring effective population size for time-scaled phylogenies using Bayesian MCMC and maximum a priori. The growth rate of effective population sizes is modeled as a simple Brownian motion. 

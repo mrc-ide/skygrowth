@@ -20,7 +20,8 @@ skygrowth.mcmc.covar(
   control = NULL,
   gamma = NA,
   logRmean = NULL,
-  logRsd = 1
+  logRsd = 1,
+  maxHeight = NULL
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ skygrowth.mcmc.covar(
 \item{logRmean}{Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided}
 
 \item{logRsd}{SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided}
+
+\item{maxHeight}{If supplied, will only compute Ne(t) estimates this far back in time. Otherwise will compute to the root of the tree.}
 
 \item{mhsteps}{Number of mcmc steps}
 }

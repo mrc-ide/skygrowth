@@ -1,16 +1,18 @@
-#' derive timeseries of coalescent and ltt along appropriate time axis 
-#' @param haxis vector retrospective time axis increasing order 
-.tre2df <- function( tre, res){
+# derive timeseries of coalescent and ltt along appropriate time axis 
+.tre2df <- function( tre, res, maxHeight = NULL ){
 	n <- Ntip( tre )
 	D <- node.depth.edgelength( tre )
 	rh <- max( D[1:n] )
 	sts <- D[1:n]
-		haxis <- seq(0, rh, length.out = res + 1)
-#~ 	haxis <- seq(0, rh, length.out = res)
 	
 	shs <- max(sts) - sts
 	
 	inhs <- max(sts) - D[ (n+1):(n + tre$Nnode) ]
+	
+	if ( is.null(maxHeight))
+		maxHeight = Inf 
+	maxHeight <- min( rh, maxHeight )
+	haxis <- seq(0, maxHeight, length.out = res + 1)
 	
 	ltt.h <- function(h) sum( shs < h ) - sum( inhs < h )
 	nco <- sapply( 2:(res+1), function(i) sum( ( inhs >  haxis[i-1] ) & ( inhs <= haxis[i] ) ) )
@@ -22,6 +24,8 @@
 	# log(alpha) + log(gamma)^nc - alpha gamma dh 
 	events <- cbind( c( haxis[-1], inhs, shs ), c( rep(0, length(haxis)-1), rep(1, length(inhs)), rep(2, length(shs)) ) )
 	events <- events[ order( events[,1]) , ]
+	
+	events <- events[ events[,1]<maxHeight , ]
 	lterms <- matrix(0.,  nrow = length(haxis) -1, ncol = 2 )
 	dh <- abs( diff( haxis)[1] )
 	.h2i <- function(hh) min( 1 + floor( hh / dh ), length( haxis) -1 )
@@ -56,7 +60,6 @@
 	# NOTE not counting most recent sample 
 	data.frame( heights = haxis[-1],  nco = nco , ltt = ltt, lterms = lterms)
 }
-
 
 # derive timeseries of coalescent and ltt along appropriate time axis 
 .tre2df2 <- function( tre, res, maxHeight = Inf ){
@@ -593,7 +596,6 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
     , burnin_percent = 20)
 
 ##
-
 #' A gibbs-metropolis algorithm for sampling Ne(t) with a non-parametric growth model
 #'
 #' @param tre A dated phylogeny in ape::phylo format (see documentation for ape)
@@ -606,6 +608,7 @@ skygrowth.map.covar =skygrowth.map.covars <- function(tre
 #' @param gamma Death rate. If provided will compute R 
 #' @param logRmean Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
 #' @param logRsd SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
+#' @param maxHeight If supplied, will only compute Ne(t) estimates this far back in time. Otherwise will compute to the root of the tree. 
 #' @return A fitted model including effective size through time
 #' @export
 skygrowth.mcmc <- function(tre
@@ -620,6 +623,8 @@ skygrowth.mcmc <- function(tre
   , logRmean = NULL
   , logRsd = 1
   
+  , maxHeight = NULL 
+  
 ){
 	if( is.null( control)) {
 			control <- .default_mcmc_control
@@ -629,7 +634,7 @@ skygrowth.mcmc <- function(tre
 		control <- x
 	}
 with( control, {
-	tredat <- .tre2df( tre, res )
+	tredat <- .tre2df( tre, res, maxHeight  )
 	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
 	dh <- abs(diff(tredat$heights)[1] )
 	
@@ -644,6 +649,7 @@ with( control, {
 	  , maxiter = 1000
 	  , abstol = 1e-4
 	  , control = NULL
+	  , maxHeight = maxHeight 
 	)
 	if (is.null( prop_log_tau_sd )) prop_log_tau_sd <- .2 + abs( log(mapfit$tau) ) / 5
 	#ne <- tredat$ne0
@@ -781,6 +787,7 @@ with( control, {
 })}
 
 
+
 #' Continue MCMC chain of previously fitted model
 #'
 #' @param fit A skygrowth.mcmc fit
@@ -830,6 +837,7 @@ continue.skygrowth.mcmc <- function( fit
 #' @param gamma Death rate. If provided will compute R 
 #' @param logRmean Mean of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
 #' @param logRsd SD of R in log space. Determines a lognormal prior on R(t). If used, _gamma_ must be provided
+#' @param maxHeight If supplied, will only compute Ne(t) estimates this far back in time. Otherwise will compute to the root of the tree. 
 #' @return A fitted model including effective size through time
 #' @export
 skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
@@ -848,6 +856,7 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
   , gamma = NA 
   , logRmean = NULL
   , logRsd = 1
+  , maxHeight = NULL
 ){
 	if (!('time' %in% colnames(data))) stop('covariate data must include *time* of observation' )
 	# initial fit for guess of ne growth 
@@ -863,6 +872,7 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
 	 , maxiter = iter0
 	 , abstol = 1e-4
 	 , control = NULL
+	 , maxHeight = maxHeight 
 	) -> mapfit
 	
 	#ne <- tredat$ne0
@@ -870,7 +880,7 @@ skygrowth.mcmc.covar = skygrowth.mcmc.covars <- function(tre
 	gr0 <- mapfit$growthrate
 	tau0 <- mapfit$tau
 	
-	tredat <- .tre2df( tre, res )
+	tredat <- .tre2df( tre, res, maxHeight )
 	lterms <- cbind( tredat$lterms.1, tredat$lterms.2) ;
 	dh <- abs(diff(tredat$heights)[1] )
 	
